@@ -1,0 +1,18 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# IDE files 
+.vscode/
+.idea/
+*.sublime-
+.hintrc
+
+# Ignore any other files you don't want to track
+.github/
