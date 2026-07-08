@@ -1,0 +1,1 @@
+This repository tries implements mathematical equations from linear algebra, probability and statistics and machine learning algorithms from scratch. 
