@@ -37,16 +37,17 @@ class Norms:
             total += abs(x) ** p
         return total ** (1 / p)
     
-n = int(input("Enter the dimension of vector: "))
-v = []
-print("Enter the elements of vector 1: ")
-for i in range(n):
-    v.append(float(input(f"Element {i+1}: ")))
+if __name__ == "__main__":
+    n = int(input("Enter the dimension of vector: "))
+    v = []
+    print("Enter the elements of vector 1: ")
+    for i in range(n):
+        v.append(float(input(f"Element {i+1}: ")))
 
-vector = Norms(v)
+    vector = Norms(v)
 
-print("Vector:", vector.values)
-print("L1 Norm:", vector.l1_norm())
-print("L2 Norm:", vector.l2_norm())
-print("L3 Norm:", vector.p_norm(3))
-print("Infinity Norm:", vector.infinity_norm())    
+    print("Vector:", vector.values)
+    print("L1 Norm:", vector.l1_norm())
+    print("L2 Norm:", vector.l2_norm())
+    print("L3 Norm:", vector.p_norm(3))
+    print("Infinity Norm:", vector.infinity_norm()) 

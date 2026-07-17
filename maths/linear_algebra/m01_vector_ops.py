@@ -139,84 +139,85 @@ class Vector:
                 return False
         return True             
 
-# Input for vector 1
-n1 = int(input("Enter the dimension of vector 1: "))
-v1 = []
-print("Enter the elements of vector 1: ")
-for i in range(n1):
-    v1.append(float(input(f"Element {i+1}: ")))
+if __name__ == "__main__":
+    # Input for vector 1
+    n1 = int(input("Enter the dimension of vector 1: "))
+    v1 = []
+    print("Enter the elements of vector 1: ")
+    for i in range(n1):
+        v1.append(float(input(f"Element {i+1}: ")))
 
-# Input for vector 2
-n2 = int(input("Enter the dimension of vector 2: "))
-v2 = []
-print("Enter the elements of vector 2: ")
-for i in range(n2):
-    v2.append(float(input(f"Element {i+1}: ")))
+    # Input for vector 2
+    n2 = int(input("Enter the dimension of vector 2: "))
+    v2 = []
+    print("Enter the elements of vector 2: ")
+    for i in range(n2):
+        v2.append(float(input(f"Element {i+1}: ")))
 
-# Calling the class Vector
-vector1 = Vector(v1)
-vector2 = Vector(v2)     
+    # Calling the class Vector
+    vector1 = Vector(v1)
+    vector2 = Vector(v2)     
 
-# Print both the vectors
-print("\nVector 1:", vector1)
-print("Vector 2:", vector2)
- 
-# Addition
-print("\nAddition of vector 1 & 2:", vector1 + vector2)
+    # Print both the vectors
+    print("\nVector 1:", vector1)
+    print("Vector 2:", vector2)
+    
+    # Addition
+    print("\nAddition of vector 1 & 2:", vector1 + vector2)
 
-# Subtraction
-print("\nSubtraction of vector 1 & 2:", vector1 - vector2)
+    # Subtraction
+    print("\nSubtraction of vector 1 & 2:", vector1 - vector2)
 
-# Equality of vectors
-print("\nAre vector 1 & 2 equal?:", vector1 == vector2)
+    # Equality of vectors
+    print("\nAre vector 1 & 2 equal?:", vector1 == vector2)
 
-# Distance between 2 vectors
-print(f"\nDistance between the 2 vectors is {vector1.distance(vector2)} units.")
+    # Distance between 2 vectors
+    print(f"\nDistance between the 2 vectors is {vector1.distance(vector2)} units.")
 
-# Scalar operations
-x = float(input("\nEnter scalar: "))
-print("\nScalar Multiplication")
-print(f"{x} * Vector 1 =", x * vector1)
-print(f"{x} * Vector 2 =", x * vector2)
+    # Scalar operations
+    x = float(input("\nEnter scalar: "))
+    print("\nScalar Multiplication")
+    print(f"{x} * Vector 1 =", x * vector1)
+    print(f"{x} * Vector 2 =", x * vector2)
 
-print("\nScalar Division (Standard Division)")
-print(f"Vector 1 / {x}=", vector1 / x)
-print(f"Vector 2 / {x} =", vector2 / x)
+    print("\nScalar Division (Standard Division)")
+    print(f"Vector 1 / {x}=", vector1 / x)
+    print(f"Vector 2 / {x} =", vector2 / x)
 
-print("\nScalar Division (Floor Division)") 
-print(f"Vector 1 // {x}=", vector1 // x)
-print(f"Vector 2 // {x}=", vector2 // x)
+    print("\nScalar Division (Floor Division)") 
+    print(f"Vector 1 // {x}=", vector1 // x)
+    print(f"Vector 2 // {x}=", vector2 // x)
 
-# Dot product
-print("\nDot Product of vector 1 & 2:", vector1.dot(vector2))
+    # Dot product
+    print("\nDot Product of vector 1 & 2:", vector1.dot(vector2))
 
-# Vector product
-try:
-    print("\nVector Product of vector 1 & 2:", vector1.cross(vector2))
-except ValueError as e:
-    print("\nVector Product:", e)
+    # Vector product
+    try:
+        print("\nVector Product of vector 1 & 2:", vector1.cross(vector2))
+    except ValueError as e:
+        print("\nVector Product:", e)
 
-# Element wise multiplication (Hadamard product)
-try:
-    print("\nHadamard Product of vector 1 & 2:", vector1.hadamard_product(vector2))
-except ValueError as e:
-    print("\nHadamard Product:", e)    
+    # Element wise multiplication (Hadamard product)
+    try:
+        print("\nHadamard Product of vector 1 & 2:", vector1.hadamard_product(vector2))
+    except ValueError as e:
+        print("\nHadamard Product:", e)    
 
-# Magnitude
-print("\n Magnitude of vector 1:", vector1.magnitude())
-print("Magnitude of vector 2:", vector2.magnitude())
+    # Magnitude
+    print("\n Magnitude of vector 1:", vector1.magnitude())
+    print("Magnitude of vector 2:", vector2.magnitude())
 
-# Unit vector
-print("\nUnit vector of vector 1:", vector1.unit_vector())
-print("Unit vector of vector 2:", vector2.unit_vector())
+    # Unit vector
+    print("\nUnit vector of vector 1:", vector1.unit_vector())
+    print("Unit vector of vector 2:", vector2.unit_vector())
 
-# Angles between vectors
-print("\nAngle between two vectors:", vector1.angle_between_vectors(vector2))
-print("Are the vectors 1 & 2 orthogonal?:", vector1.is_orthogonal(vector2))
+    # Angles between vectors
+    print("\nAngle between two vectors:", vector1.angle_between_vectors(vector2))
+    print("Are the vectors 1 & 2 orthogonal?:", vector1.is_orthogonal(vector2))
 
-# Negation of vectors
-print("\nNegation of vector 1:", -vector1)
-print("Negation of vector 2:", -vector2)
+    # Negation of vectors
+    print("\nNegation of vector 1:", -vector1)
+    print("Negation of vector 2:", -vector2)
 
-# Parallel vectors
-print("\nAre vectors 1 & 2 parallel:", vector1.is_parallel(vector2))
+    # Parallel vectors
+    print("\nAre vectors 1 & 2 parallel:", vector1.is_parallel(vector2))
