@@ -305,25 +305,70 @@ class LinearTransformation:
         return True
     
 if __name__ == "__main__":
-    A = LinearTransformation([[1, 2], [3, 4]])
-    B = LinearTransformation([[5, 6], [7, 8]])
-    v = Vector([1, 0])
- 
-    print("A =\n", A)
+    # Matrix input function
+    def input_matrix(name):
+        rows = int(input(f"Enter number of rows for {name}: "))
+        cols = int(input(f"Enter number of columns for {name}: "))
+        matrix = []
+        print(f"Enter the elements of {name} row by row:")
+        for i in range(rows):
+            row = list(map(float, input(f"Row {i+1}: ").split()))
+            if len(row) != cols:
+                raise ValueError(f"Each row must contain exactly {cols} elements.")
+            matrix.append(row)
+        return LinearTransformation(matrix)
+
+    # Vector input function
+    def input_vector():
+        size = int(input("Enter the dimension of the vector: "))
+        values = list(map(float, input("Enter the vector elements: ").split()))
+        if len(values) != size:
+            raise ValueError("Incorrect number of vector elements.")
+        return Vector(values)
+
+    # User inputs
+    A = input_matrix("A")
+    B = input_matrix("B")
+    v = input_vector()
+
+    # Outputs
+    print("\nA =")
+    print(A)
+
     print("\nShape:", A.shape)
-    print("Trace:", A.trace())
-    print("Determinant:", A.determinant_optimised())
-    print("Is invertible:", A.is_invertible())
-    print("Is symmetric:", A.is_symmetric())
- 
-    print("\nA + B =\n", A + B)
-    print("\nA * B =\n", A * B)
-    print("\nA transposed =\n", A.transpose())
-    print("\nA inverse =\n", A.inverse_optimised())
-    print("\nApply A to v:", A.apply(v))
- 
-    print("\nIdentity (3x3):\n", LinearTransformation.identity(3))
-    print("\nZeros (2x3):\n", LinearTransformation.zeros(2, 3))    
+
+    if A.shape[0] == A.shape[1]:
+        print("Trace:", A.trace())
+        print("Determinant:", A.determinant_optimised())
+        print("Is invertible:", A.is_invertible())
+        print("Is symmetric:", A.is_symmetric())
+        if A.is_invertible():
+            print("\nA inverse =")
+            print(A.inverse_optimised())
+
+    if A.shape == B.shape:
+        print("\nA + B =")
+        print(A + B)
+
+    if A.shape[1] == B.shape[0]:
+        print("\nA * B =")
+        print(A * B)
+
+    print("\nA transposed =")
+    print(A.transpose())
+
+    if len(v) == A.shape[1]:
+        print("\nApply A to v:")
+        print(A.apply(v))
+
+    n = int(input("\nEnter size for identity matrix: "))
+    print("\nIdentity Matrix:")
+    print(LinearTransformation.identity(n))
+
+    rows = int(input("\nEnter rows for zero matrix: "))
+    cols = int(input("Enter columns for zero matrix: "))
+    print("\nZero Matrix:")
+    print(LinearTransformation.zeros(rows, cols))
     
 
 
