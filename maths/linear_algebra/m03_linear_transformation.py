@@ -142,7 +142,7 @@ class LinearTransformation:
         return sum(self.matrix[i][i] for i in range(self.shape[0]))
     
     # Determinant 
-    # Brute force way 
+    # Brute force way (recursive cofactor expansion) - Time complexity: O(n!)
     def determinant(self, matrix = None):
         if matrix is None:
             self._check_square()
@@ -168,9 +168,42 @@ class LinearTransformation:
             sign = (-1) ** col
             det += sign * matrix[0][col] * self.determinant(minor)   
         return det
+    
+    # Optimised way (Gaussian elimination) - Time complexity: O(n^3)
+    def determinant_optimised(self, matrix = None):
+        self._check_square()
+        n = self.shape[0]
+ 
+        # Work on a copy so we don't mutate self
+        mat = [row[:] for row in self.matrix]
+        sign = 1
+ 
+        for col in range(n):
+            # Partial pivot: find the row with the largest absolute value in this column
+            pivot_row = max(range(col, n), key=lambda r: abs(mat[r][col]))
+            if mat[pivot_row][col] == 0:
+                return 0  # Singular matrix
+ 
+            if pivot_row != col:
+                mat[col], mat[pivot_row] = mat[pivot_row], mat[col]
+                sign *= -1  # Row swap flips the sign of the determinant
+ 
+            # Eliminate below pivot
+            for row in range(col + 1, n):
+                if mat[col][col] == 0:
+                    continue
+                factor = mat[row][col] / mat[col][col]
+                for k in range(col, n):
+                    mat[row][k] -= factor * mat[col][k]
+ 
+        # Determinant = product of diagonal elements * accumulated sign
+        det = sign
+        for i in range(n):
+            det *= mat[i][i]
+        return det
 
     # Inverse
-    # Brute Force: A^(-1) = (1 / det(A)) * adj(A)
+    # Brute Force (Adjoint method): A^(-1) = (1 / det(A)) * adj(A) - Time complexity: O(n!)
     def inverse(self):
         det = self.determinant()
         if det == 0:
@@ -185,7 +218,6 @@ class LinearTransformation:
                     [self.matrix[x][y] for y in range(n) if y != j]
                     for x in range(n) if x != i
                 ]
-
                 value = ((-1) ** (i + j)) * self.determinant(minor)
                 row.append(value)
             cofactors.append(row)
@@ -194,7 +226,38 @@ class LinearTransformation:
         return LinearTransformation([
             [adjugate[i][j] / det for j in range(n)]
             for i in range(n)
-        ])            
+        ])     
+
+    # Optimised method (Gauss Jordan elimination) - Time complexity: O(n^3)
+    def inverse_optimised(self):
+        self._check_square()
+        n = self.shape[0]
+ 
+        # Build augmented matrix [M | I]
+        aug = [self.matrix[i][:] + [1.0 if i == j else 0.0 for j in range(n)]
+               for i in range(n)]
+ 
+        for col in range(n):
+            # Partial pivot
+            pivot_row = max(range(col, n), key=lambda r: abs(aug[r][col]))
+            if abs(aug[pivot_row][col]) < 1e-12:
+                raise ValueError("Matrix is singular and cannot be inverted.")
+            aug[col], aug[pivot_row] = aug[pivot_row], aug[col]
+ 
+            # Scale pivot row so leading element = 1
+            pivot_val = aug[col][col]
+            aug[col] = [x / pivot_val for x in aug[col]]
+ 
+            # Eliminate the entire column (above and below)
+            for row in range(n):
+                if row == col:
+                    continue
+                factor = aug[row][col]
+                aug[row] = [aug[row][k] - factor * aug[col][k] for k in range(2 * n)]
+ 
+        # Extract the right half — that's M^{-1}
+        inv = [aug[i][n:] for i in range(n)]
+        return LinearTransformation(inv)        
 
     # Factory methods 
     # Call cls(...) instead of LinearTransformation(...) so subclasses inherit them correctly.
@@ -249,14 +312,14 @@ if __name__ == "__main__":
     print("A =\n", A)
     print("\nShape:", A.shape)
     print("Trace:", A.trace())
-    print("Determinant:", A.determinant())
+    print("Determinant:", A.determinant_optimised())
     print("Is invertible:", A.is_invertible())
     print("Is symmetric:", A.is_symmetric())
  
     print("\nA + B =\n", A + B)
     print("\nA * B =\n", A * B)
     print("\nA transposed =\n", A.transpose())
-    print("\nA inverse =\n", A.inverse())
+    print("\nA inverse =\n", A.inverse_optimised())
     print("\nApply A to v:", A.apply(v))
  
     print("\nIdentity (3x3):\n", LinearTransformation.identity(3))
