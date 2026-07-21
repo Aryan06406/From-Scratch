@@ -1,4 +1,3 @@
-import math
 from m01_vector_ops import Vector
 
 class LinearTransformation:
@@ -39,13 +38,19 @@ class LinearTransformation:
         return self.matrix == other.matrix
     
     # Dimension check
-    # Called before addition/subtraction to check if they are of same shape or not    
+    # Called before addition/subtraction to check if they are of same shape or not  
+    def check_same_shape(self, other):
+        self._check_same_shape(other)
+
     def _check_same_shape(self, other):
         if self.shape != other.shape:
             raise ValueError(f"Shape mismatch: {self.shape} vs {other.shape}")
         
     # Called before trace, determinant & inverse as it checks whther the matrix is
     # square or not     
+    def check_square(self):
+        self._check_same_shape()
+
     def _check_square(self):
         r, c = self.shape
         if r != c:
@@ -109,7 +114,7 @@ class LinearTransformation:
     
     # Apply transformation to a vector, return M * v as a new vector
     # No of columns in M must be equal to the dimension of v
-    def apply(self, vector):
+    def apply_transformation(self, vector):
         if not isinstance(vector, Vector):
             raise TypeError("Argument must be a vector instance.")
         r, c = self.shape
@@ -359,7 +364,7 @@ if __name__ == "__main__":
 
     if len(v) == A.shape[1]:
         print("\nApply A to v:")
-        print(A.apply(v))
+        print(A.apply_transformation(v))
 
     n = int(input("\nEnter size for identity matrix: "))
     print("\nIdentity Matrix:")
