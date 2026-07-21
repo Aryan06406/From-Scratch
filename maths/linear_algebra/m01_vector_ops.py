@@ -75,12 +75,12 @@ class Vector:
         return Vector([y // scalar for y in self.elements])
     
     # Dot product
-    def dot(self, other):
+    def dot_product(self, other):
         self._check_dimension(other)
         return sum(a * b for a, b in zip(self, other)) 
     
     # Vector/Cross product (strictly for 3D only)
-    def cross(self, other):
+    def cross_product(self, other):
         self._check_dimension(other)
         if len(self) != 3 or len(other) != 3:
             raise ValueError("Cross Product is defined for only 3D vectors")
@@ -117,7 +117,7 @@ class Vector:
         return Vector([x * y for x, y in zip(self, other)])
     
     # Distance between 2 vectors
-    def distance(self, other):
+    def distance_between_vectors(self, other):
         return (self-other).magnitude()
     
     # Checks whether the vectors are orthogonal to each other or not
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     print("\nAre vector 1 & 2 equal?:", vector1 == vector2)
 
     # Distance between 2 vectors
-    print(f"\nDistance between the 2 vectors is {vector1.distance(vector2)} units.")
+    print(f"\nDistance between the 2 vectors is {vector1.distance_between_vectors(vector2)} units.")
 
     # Scalar operations
     x = float(input("\nEnter scalar: "))
@@ -189,11 +189,11 @@ if __name__ == "__main__":
     print(f"Vector 2 // {x}=", vector2 // x)
 
     # Dot product
-    print("\nDot Product of vector 1 & 2:", vector1.dot(vector2))
+    print("\nDot Product of vector 1 & 2:", vector1.dot_product(vector2))
 
     # Vector product
     try:
-        print("\nVector Product of vector 1 & 2:", vector1.cross(vector2))
+        print("\nVector Product of vector 1 & 2:", vector1.cross_product(vector2))
     except ValueError as e:
         print("\nVector Product:", e)
 
