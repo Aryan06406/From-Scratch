@@ -25,7 +25,10 @@ class Vector:
     def __getitem__(self,index):
         return self.elements[index]
 
-    # Checks whether the vectors are of same dimension or not  
+    # Checks whether the vectors are of same dimension or not 
+    def check_dimension(self, other):
+        self._check_dimension(other)
+
     def _check_dimension(self, other):
         if not isinstance(other, Vector):
             raise TypeError("Operand must be vector.")
