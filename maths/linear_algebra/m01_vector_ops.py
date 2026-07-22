@@ -110,7 +110,7 @@ class Vector:
     def angle_between_vectors(self, other):
         if self.magnitude() == 0 or other.magnitude() == 0:
             raise ZeroDivisionError("Angle with zero vector is undefined.")
-        theta = ((self.dot(other)) / ((self.magnitude()) * (other.magnitude())))
+        theta = ((self.dot_product(other)) / ((self.magnitude()) * (other.magnitude())))
         theta = max(-1.0, min(1.0, theta))
         return math.degrees(math.acos(theta)) 
     
@@ -125,7 +125,7 @@ class Vector:
     
     # Checks whether the vectors are orthogonal to each other or not
     def is_orthogonal(self, other):
-        return abs(self.dot(other)) < 1e-9
+        return abs(self.dot_product(other)) < 1e-9
     
     # Checks whether the vectors are parallel or not
     def is_parallel(self, other):
