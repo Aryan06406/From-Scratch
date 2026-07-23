@@ -10,7 +10,7 @@ class GramSchmidt:
     def orthogonalize_vector(v: Vector, basis: list[Vector]) -> Vector:
         if not isinstance(v, Vector):
             raise TypeError("v must be a vector.")
-        x = v.copy()
+        x = Vector(list(v))
         for b in basis:
             x = x - Projection.vector_projection(x, b)
         return x

@@ -141,6 +141,10 @@ class Vector:
             elif a * ratio[1] != b * ratio[0]:
                 return False
         return True             
+    
+    # Normalise vectors
+    def normalize(self):
+        return self.unit_vector()
 
 if __name__ == "__main__":
     # Input for vector 1

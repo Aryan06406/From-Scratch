@@ -10,9 +10,9 @@ class Projection:
         Projection._validate_projetion_vectors(u, v)
 
     def _validate_projetion_vectors(u: Vector, v: Vector):
-        if u is not Vector:
+        if not isinstance(u, Vector):
             raise TypeError("The given input is not a vector.")
-        if v is not Vector:
+        if not isinstance(v, Vector):
             raise TypeError("The given input is not a vector.")
         u.check_dimension(v)
         if abs(v.dot_product(v)) < 1e-9:
