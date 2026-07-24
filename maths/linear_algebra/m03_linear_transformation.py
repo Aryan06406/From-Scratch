@@ -1,8 +1,27 @@
+"""
+m03_linear_transformation.py
+
+Implementation of matrices and linear transformations from scratch.
+
+Topics covered
+--------------
+- Matrix arithmetic
+- Matrix-vector multiplication
+- Matrix-matrix multiplication
+- Transpose
+- Trace
+- Determinant (recursive & Gaussian elimination)
+- Matrix inverse (Adjoint & Gauss-Jordan)
+- Identity and zero matrices
+- Structural matrix properties
+"""
+
 from m01_vector_ops import Vector
 
 class LinearTransformation:
-    # Initialises from a list of lists (rows) & all rows must have equal length
-    def __init__(self, matrix):
+    # Initializes a matrix from a nested list.
+    # All rows must have the same number of columns.
+    def __init__(self, matrix: list[list[float]]) -> None:
         if not matrix or not matrix[0]:
             raise ValueError("Matrix cannot be empty.")
         col = len(matrix[0])
@@ -11,54 +30,58 @@ class LinearTransformation:
                 raise ValueError("All rows must have same no. of columns.")
         self.matrix = [list(row) for row in matrix]
     
-    # Representation
-    # Prints each row on a new line, readable output
-    def __str__(self):
+    # Returns a human-readable representation of the matrix.
+    def __str__(self) -> str:
         rows = [str(row) for row in self.matrix]
         return "\n".join(rows)
     
-    # Gives the unambiguous version for debugging
-    def __repr__(self):
+    # Returns the official representation used for debugging.
+    def __repr__(self) -> str:
         return f"LinearTransformation({self.matrix})"
     
-    # Shape & access
-    # To check dimensions before operations
+    # Allows iteration over the matrix rows.
+    def __iter__(self):
+        return iter(self.matrix)
+    
+    # Returns the dimensions of the matrix as (rows, columns).
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int]:
         return len(self.matrix), len(self.matrix[0])
     
-    # Lets you do A[0] to get the first row
-    def __getitem__(self, index):
+    # Enables indexing using matrix[i].
+    def __getitem__(self, index: int) -> list[float]:
         return self.matrix[index]
     
-    # Lets you do A == B
-    def __eq__(self, other):
+    # Checks whether two matrices are equal.
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, LinearTransformation):
             return NotImplemented
         return self.matrix == other.matrix
     
     # Dimension check
-    # Called before addition/subtraction to check if they are of same shape or not  
-    def check_same_shape(self, other):
+    # Verifies that two matrices have identical dimensions.
+    def check_same_shape(self, other: "LinearTransformation") -> None:
         self._check_same_shape(other)
 
-    def _check_same_shape(self, other):
+    # Internal helper for validating equal matrix dimensions.
+    def _check_same_shape(self, other: "LinearTransformation") -> None:
         if self.shape != other.shape:
             raise ValueError(f"Shape mismatch: {self.shape} vs {other.shape}")
         
     # Called before trace, determinant & inverse as it checks whther the matrix is
-    # square or not     
-    def check_square(self):
-        self._check_same_shape()
+    # Verifies that the matrix is square.
+    def check_square(self) -> None:
+        self._check_square()
 
-    def _check_square(self):
+    # Internal helper for validating square matrices.
+    def _check_square(self) -> None:
         r, c = self.shape
         if r != c:
             raise ValueError(f"Operation requires a square matrix, got {self.shape}.")
         
     # Arithmetic
-    # Addition
-    def __add__(self, other):
+    # Computes element-wise matrix addition.
+    def __add__(self, other: "LinearTransformation") -> "LinearTransformation":
         self._check_same_shape(other)
         result = []
         for r1, r2 in zip(self.matrix, other.matrix):
@@ -68,8 +91,8 @@ class LinearTransformation:
             result.append(new_row)    
         return LinearTransformation(result)
     
-    # Subtraction
-    def __sub__(self, other):
+    # Computes element-wise matrix subtraction.
+    def __sub__(self, other: "LinearTransformation") -> "LinearTransformation":
         self._check_same_shape(other)
         result = []
         for r1, r2 in zip(self.matrix, other.matrix):
@@ -79,8 +102,9 @@ class LinearTransformation:
             result.append(new_row)    
         return LinearTransformation(result)
     
-    # Multiplication
-    def __mul__(self, other):
+    # Performs scalar multiplication or matrix multiplication.
+    # Scalar: αA   and    Matrix: AB
+    def __mul__(self, other: int | float | "LinearTransformation") -> "LinearTransformation":
         if isinstance(other, (int, float)):
             result = []
             for row in self.matrix:
@@ -108,13 +132,13 @@ class LinearTransformation:
             return LinearTransformation(result)
         return NotImplemented
     
-    # Just calls __mul__ so that 3 * A and A * 3 works both same
-    def __rmul__(self, scalar):
+    # Enables scalar multiplication from the left. Example: 3 * A
+    def __rmul__(self, scalar: int | float) -> "LinearTransformation":
         return self.__mul__(scalar)
     
-    # Apply transformation to a vector, return M * v as a new vector
-    # No of columns in M must be equal to the dimension of v
-    def apply_transformation(self, vector):
+    # Applies the linear transformation to a vector.
+    # Computes: Mv where M is the matrix and v is the input vector.
+    def apply_transformation(self, vector: Vector) -> Vector:
         if not isinstance(vector, Vector):
             raise TypeError("Argument must be a vector instance.")
         r, c = self.shape
@@ -130,8 +154,8 @@ class LinearTransformation:
             result.append(row_sum)
         return Vector(result)         
     
-    # Transpose
-    def transpose(self):
+    # Computes the transpose of the matrix: (Aᵀ)ij = Aji
+    def transpose(self) -> "LinearTransformation":
         r, c = self.shape
         result = []
         for j in range(c):
@@ -141,14 +165,15 @@ class LinearTransformation:
             result.append(new_row)
         return LinearTransformation(result)
 
-    # Trace (Sum of diagonal elements, requires a square matrix)
-    def trace(self):
+    # Computes the trace of a square matrix: tr(A) = Σ Aii
+    def trace(self) -> float:
         self._check_square()
         return sum(self.matrix[i][i] for i in range(self.shape[0]))
     
     # Determinant 
-    # Brute force way (recursive cofactor expansion) - Time complexity: O(n!)
-    def determinant(self, matrix = None):
+    # Computes the determinant using recursive cofactor expansion.
+    # Time Complexity: O(n!)
+    def determinant(self, matrix: list[list[float]] | None = None) -> float:
         if matrix is None:
             self._check_square()
             matrix = self.matrix
@@ -174,8 +199,9 @@ class LinearTransformation:
             det += sign * matrix[0][col] * self.determinant(minor)   
         return det
     
-    # Optimised way (Gaussian elimination) - Time complexity: O(n^3)
-    def determinant_optimised(self, matrix = None):
+    # Computes the determinant using Gaussian elimination. 
+    # Time complexity: O(n^3)
+    def determinant_optimised(self, matrix = None) -> float:
         self._check_square()
         n = self.shape[0]
  
@@ -208,11 +234,12 @@ class LinearTransformation:
         return det
 
     # Inverse
-    # Brute Force (Adjoint method): A^(-1) = (1 / det(A)) * adj(A) - Time complexity: O(n!)
-    def inverse(self):
+    # Computes the inverse using the adjugate method: A^(-1) = (1 / det(A)) * adj(A) 
+    # Time complexity: O(n!)
+    def inverse(self) -> "LinearTransformation":
         det = self.determinant()
         if det == 0:
-            raise ValueError("Matrix is invertible.")
+            raise ValueError("Matrix is singular and cannot be inverted.")
         # Find cofactor matrix
         cofactors = []
         n = len(self.matrix)
@@ -233,8 +260,9 @@ class LinearTransformation:
             for i in range(n)
         ])     
 
-    # Optimised method (Gauss Jordan elimination) - Time complexity: O(n^3)
-    def inverse_optimised(self):
+    # Computes the inverse using Gauss-Jordan elimination. 
+    # Time complexity: O(n^3)
+    def inverse_optimised(self) -> "LinearTransformation":
         self._check_square()
         n = self.shape[0]
  
@@ -265,35 +293,36 @@ class LinearTransformation:
         return LinearTransformation(inv)        
 
     # Factory methods 
-    # Call cls(...) instead of LinearTransformation(...) so subclasses inherit them correctly.
+    # Creates an n × n identity matrix.
     @classmethod
-    def identity(cls, n):      
+    def identity(cls, n: int) -> "LinearTransformation":      
         return cls([[1 if i == j else 0 for j in range(n)] for i in range(n)])
     
+    # Creates a matrix whose entries are all zero.
     @classmethod
-    def zeros(cls, rows, cols):
+    def zeros(cls, rows: int, cols: int) -> "LinearTransformation":
         return cls([[0] * cols for _ in range(rows)])
     
     # Structural checks
-    # A square matrix is invertible if its determinant is non zero.
-    def is_invertible(self):
+    # Checks whether the matrix is invertible. A matrix is invertible iff det(A) ≠ 0.    
+    def is_invertible(self) -> bool:
         try:
             self._check_square()
         except ValueError:
             return False
         return abs(self.determinant()) > 1e-9
  
-    # M is symmetric if M == M^T. Requires a square matrix.
-    def is_symmetric(self):
+    # Checks whether the matrix is symmetric. A = Aᵀ
+    def is_symmetric(self) -> bool:
         try:
             self._check_square()
         except ValueError:
             return False
         return self == self.transpose()
     
-    # M is orthogonal if M @ M^T == I (equivalently M^T == M^{-1}).
-    # This holds when every column is a unit vector and columns are mutually orthogonal.
-    def is_orthogonal(self):
+    # Checks whether the matrix is orthogonal.A is orthogonal if
+    # AAᵀ = I Equivalently, A⁻¹ = Aᵀ Every column forms an orthonormal basis.
+    def is_orthogonal(self) -> bool:
         try:
             self._check_square()
         except ValueError:
@@ -310,8 +339,8 @@ class LinearTransformation:
         return True
     
 if __name__ == "__main__":
-    # Matrix input function
-    def input_matrix(name):
+    # Reads a matrix from standard input.
+    def input_matrix(name: str) -> LinearTransformation:
         rows = int(input(f"Enter number of rows for {name}: "))
         cols = int(input(f"Enter number of columns for {name}: "))
         matrix = []
@@ -323,8 +352,8 @@ if __name__ == "__main__":
             matrix.append(row)
         return LinearTransformation(matrix)
 
-    # Vector input function
-    def input_vector():
+    # Reads a vector from standard input.
+    def input_vector() -> Vector:
         size = int(input("Enter the dimension of the vector: "))
         values = list(map(float, input("Enter the vector elements: ").split()))
         if len(values) != size:
