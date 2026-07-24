@@ -1,59 +1,86 @@
+""" m04_projection.py 
+
+Implementation of vector projection operations from scratch. 
+
+Topics covered 
+-------------- 
+- Scalar projection 
+- Vector projection 
+- Vector rejection 
+- Orthogonal component 
+- Projection matrix 
+"""
+
 from m01_vector_ops import Vector
 from m03_linear_transformation import LinearTransformation
 
 class Projection:
-    # Projection is not a isolated topic but rather a knock off of combination of
-    # several topics of vectors and linear transformation onto each other 
-    # hence why we use @staticmethod. 
-    # Validating the vectors
+    # Verifies that both inputs are valid vectors for projection. 
+    # Conditions: 
+    # - Both operands must be Vector instances. 
+    # - Both vectors must have the same dimension. 
+    # - The vector being projected onto must be non-zero.
+    @staticmethod
     def validate_projetion_vectors(u: Vector, v: Vector):
-        Projection._validate_projetion_vectors(u, v)
+        Projection._validate_projcetion_vectors(u, v)
 
-    def _validate_projetion_vectors(u: Vector, v: Vector):
+    # Internal helper
+    # Internal helper for validating projection operands.
+    @staticmethod
+    def _validate_projcetion_vectors(u: Vector, v: Vector):
         if not isinstance(u, Vector):
             raise TypeError("The given input is not a vector.")
         if not isinstance(v, Vector):
             raise TypeError("The given input is not a vector.")
         u.check_dimension(v)
         if abs(v.dot_product(v)) < 1e-9:
-            raise ValueError
+            raise ValueError("Cannot project onto the zero vector.")
     
-    # Scalar projection of vector u onto vector v
+    # Computes the scalar projection of vector u onto vector v: comp_v(u) = (u · v) / ||v||
     @staticmethod
     def scalar_projection(u: Vector, v: Vector) -> float:
-        Projection._validate_projetion_vectors(u, v)
+        Projection._validate_projcetion_vectors(u, v)
         return u.dot_product(v) / v.magnitude()
 
-    # Vector projection of vector u onto vector v
+    # Computes the vector projection of u onto v: proj_v(u) = ((u · v) / (v · v)) v
     @staticmethod
     def vector_projection(u: Vector, v: Vector) -> Vector:
-        Projection._validate_projetion_vectors(u, v)
+        Projection._validate_projcetion_vectors(u, v)
         scalar = u.dot_product(v) / v.dot_product(v)
         return scalar * v
     
-    # Rejection vector
+    # Computes the rejection of u from v: rej_v(u) = u − proj_v(u)
     @staticmethod
     def rejection(u: Vector, v: Vector) -> Vector:
         return u - Projection.vector_projection(u, v)
     
-    # Orthogonal component of the vector
+    # Computes the component of u orthogonal to v. Equivalent to the rejection vector.
     @staticmethod
     def orthogonal_component(u: Vector, v: Vector) -> Vector:
         return Projection.rejection(u, v)
     
-    # Projection matrix
+    # Computes the projection matrix onto the one-dimensional 
+    # subspace spanned by vector v.
+    # P = (v vᵀ) / (vᵀv)
     @staticmethod
     def projection_matrix(v: Vector) -> LinearTransformation:
+        # The denominator is ||v||².
         denominator = v.dot_product(v)
         if abs(denominator) < 1e-9:
             raise ValueError("Zero vector has no projection matrix.")
         n = len(v)
         matrix = []
+        # Construct the outer product vvᵀ
         for i in range(n):
             new_row = []
             for j in range(n):
-                new_row.append(v[i] * v[j] / denominator)
+                # Each entry is vi * vj.
+                new_row.append(v[i] * v[j])
             matrix.append(new_row)
+        # Scale the outer product by 1/(vᵀv) to obtain the projection matrix.
+        for i in range(n):
+            for j in range(n):
+                matrix[i][j] /= denominator
         return LinearTransformation(matrix) 
 
 if __name__ == "__main__":
@@ -70,7 +97,7 @@ if __name__ == "__main__":
     for i in range(n2):
         v2.append(float(input(f"Element {i+1}: ")))
 
-    # Calling the class Vector
+    # Construct Vector objects from the user inputs.
     vector1 = Vector(v1)
     vector2 = Vector(v2)    
 
@@ -86,6 +113,6 @@ if __name__ == "__main__":
     # Orthogonal component
     print("\nOrthogonal component of the vector projection is", Projection.orthogonal_component(vector1, vector2))
 
-    # Projection matrix
+    # Projection matrix onto vector 1.
     print("\nProjection matrix:")
     print(Projection.projection_matrix(vector1))
