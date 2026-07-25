@@ -17,6 +17,7 @@ Topics covered
 - Distance
 """
 
+from __future__ import annotations
 import math 
 
 class Vector:

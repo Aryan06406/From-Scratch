@@ -12,8 +12,9 @@ Topics covered
 - Orthonormality verification 
 """
 
-from m01_vector_ops import Vector
-from m04_projection import Projection
+from __future__ import annotations
+from .m01_vector_ops import Vector
+from .m04_projection import Projection
 
 class GramSchmidt:
     # Implements the Gram-Schmidt orthogonalization process. 

@@ -12,8 +12,9 @@ Topics covered
 - Projection matrix 
 """
 
-from m01_vector_ops import Vector
-from m03_linear_transformation import LinearTransformation
+from __future__ import annotations
+from .m01_vector_ops import Vector
+from .m03_linear_transformation import LinearTransformation
 
 class Projection:
     # Verifies that both inputs are valid vectors for projection. 

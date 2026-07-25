@@ -16,7 +16,8 @@ Topics covered
 - Structural matrix properties
 """
 
-from m01_vector_ops import Vector
+from __future__ import annotations
+from .m01_vector_ops import Vector
 
 class LinearTransformation:
     # Initializes a matrix from a nested list.

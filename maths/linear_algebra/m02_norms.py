@@ -10,8 +10,8 @@ Topics covered
 - Infinity norm (L∞)
 - General p-norm
 """
-
-from m01_vector_ops import Vector
+from __future__ import annotations
+from .m01_vector_ops import Vector
 
 class Norms:
     # Initializes the norm object for a Vector instance.
