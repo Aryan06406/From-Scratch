@@ -8,7 +8,7 @@ vectors (for the cross product), runs every operation implemented in the Vector 
 and renders each one as a labelled matplotlib panel so you can see what the operation
 did geometrically.
 
-Output: a single PNG saved next to this script (vector_ops_visualization.png)
+Output: a single PNG saved next to this script (v01_vector_ops.png)
 """
 
 import math
