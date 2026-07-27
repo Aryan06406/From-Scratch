@@ -1,5 +1,5 @@
 """
-visualize_norms.py
+v02_norms.py
 
 Visual companion to m02_norms.py.
 
