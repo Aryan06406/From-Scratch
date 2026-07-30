@@ -9,7 +9,7 @@ The visualization scripts are located inside the linear_algebra/visualization pa
 
 From the project root:
 
-..\.venv\Scripts\activate
+.venv\Scripts\activate
 
 2. Navigate to the maths directory
 cd maths
