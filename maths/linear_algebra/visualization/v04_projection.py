@@ -1,12 +1,12 @@
 """
-visualize_projection.py
+v04_projection.py
 
 Visual companion to m04_projection.py.
 
 Takes two 2D vectors (u is projected onto v) and renders every concept
 in the Projection class as a dedicated, clearly-labelled panel.
 
-Output: projection_visualization.png
+Output: v04_projection.png
 """
 
 import math
