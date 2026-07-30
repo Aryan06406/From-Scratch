@@ -174,18 +174,31 @@ def build_figure(vectors: list[Vector]) -> plt.Figure:
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     return fig
 
+def get_vectors():
+    default_vectors = [Vector([3, 1]), Vector([2, 2])]
+    if input("Use default vectors? (Y/n): ").strip().lower() in ("", "y", "yes"):
+        return default_vectors
+    dim = int(input("Dimension (2 or 3): "))
+    num_vectors = int(input("Number of vectors: "))
+    vectors = []
+    for i in range(num_vectors):
+        while True:
+            values = input(f"Vector {i+1}: ").split()
+            if len(values) != dim:
+                print(f"Please enter exactly {dim} values.")
+                continue
+            vectors.append(Vector([float(x) for x in values]))
+            break
+    return vectors
+
 def main():
-    # Demo input -- replace with your own Vector list as needed.
-    vectors = [Vector([3, 1]), Vector([2, 2])]
-
+    vectors = get_vectors()
     fig = build_figure(vectors)
-
     out_path = Path(__file__).parent / "figures"
     out_path.mkdir(parents=True, exist_ok=True)
     figure_path = out_path / "v05_gram_schmidt.png"
     fig.savefig(figure_path, dpi=150, bbox_inches="tight")
     print(f"\nSaved visualization to {figure_path}")
-
 
 if __name__ == "__main__":
     main()
