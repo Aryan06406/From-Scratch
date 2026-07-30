@@ -16,3 +16,4 @@ __pycache__/
 
 # Ignore any other files you don't want to track
 .github/
+figures/
