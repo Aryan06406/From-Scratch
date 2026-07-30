@@ -56,3 +56,6 @@ python -m linear_algebra.visualization.v02_matrix_ops
 
 
 This will match the package structure you are using and also documents the important python -m workflow that avoids the import errors you encountered.
+
+
+Kindly note while visualization uses ai for implementation, the library and its implementation of algorithms doesn't
