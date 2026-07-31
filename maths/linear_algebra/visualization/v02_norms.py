@@ -16,8 +16,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from linear_algebra.m01_vector_ops import Vector
-from linear_algebra.m02_norms import Norms
+from maths.linear_algebra.core import Vector, Norms
 
 # Input handling
 

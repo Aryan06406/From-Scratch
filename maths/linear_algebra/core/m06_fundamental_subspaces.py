@@ -16,8 +16,8 @@ Topics covered
 """
 
 from __future__ import annotations
-from .m01_vector_ops import Vector
-from .m03_linear_transformation import LinearTransformation
+from maths.linear_algebra.core.m01_vector_ops import Vector
+from maths.linear_algebra.core.m03_linear_transformation import LinearTransformation
 
 class FundamentalSubspaces:
     # Initializes the Fundamental Subspaces object for a matrix.

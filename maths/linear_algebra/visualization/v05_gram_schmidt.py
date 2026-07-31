@@ -17,14 +17,10 @@ Run as a script (from the parent directory of the package):
 from __future__ import annotations
 import math
 from pathlib import Path
-
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
-from linear_algebra.m01_vector_ops import Vector
-from linear_algebra.m04_projection import Projection
-from linear_algebra.m05_gram_schmidt import GramSchmidt
+from maths.linear_algebra.core.m01_vector_ops import Vector, Projection, GramSchmidt
 
 COLOR_INPUT = "#4C72B0"     # blue   - original input vectors
 COLOR_BASIS = "#55A868"     # green  - orthogonal basis

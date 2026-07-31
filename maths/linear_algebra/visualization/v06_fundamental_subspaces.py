@@ -21,9 +21,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from pathlib import Path
-from linear_algebra.m01_vector_ops import Vector
-from linear_algebra.m03_linear_transformation import LinearTransformation
-from linear_algebra.m06_fundamental_subspaces import FundamentalSubspaces
+from maths.linear_algebra.core.m01_vector_ops import Vector
+from maths.linear_algebra.core.m03_linear_transformation import LinearTransformation, FundamentalSubspaces
 
 # input
 

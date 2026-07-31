@@ -19,8 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon, Circle
 from pathlib import Path
-from linear_algebra.m01_vector_ops import Vector
-from linear_algebra.m03_linear_transformation import LinearTransformation
+from maths.linear_algebra.core import Vector, LinearTransformation
 
 
 # Input handling

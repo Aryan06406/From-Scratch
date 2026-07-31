@@ -15,9 +15,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Arc, FancyArrowPatch
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 from pathlib import Path
-from linear_algebra.m01_vector_ops import Vector
-from linear_algebra.m03_linear_transformation import LinearTransformation
-from linear_algebra.m04_projection import Projection
+from maths.linear_algebra.core.m01_vector_ops import Vector
+from maths.linear_algebra.core.m03_linear_transformation import LinearTransformation, Projection
 
 
 # Helpers

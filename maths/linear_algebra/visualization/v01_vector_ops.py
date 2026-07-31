@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (needed for 3D projection)
 from pathlib import Path
-from linear_algebra.m01_vector_ops import Vector
+from maths.linear_algebra.core import Vector
 
 
 # Small helpers for drawing

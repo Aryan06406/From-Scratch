@@ -11,7 +11,7 @@ Topics covered
 - General p-norm
 """
 from __future__ import annotations
-from .m01_vector_ops import Vector
+from maths.linear_algebra.core.m01_vector_ops import Vector
 
 class Norms:
     # Initializes the norm object for a Vector instance.
