@@ -14,7 +14,6 @@ Output: a single PNG saved next to this script (v01_vector_ops.png)
 import math
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (needed for 3D projection)
 from pathlib import Path
 from maths.linear_algebra.core import Vector
 
