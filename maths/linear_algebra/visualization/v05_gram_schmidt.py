@@ -9,9 +9,6 @@ Supports 2D and 3D input vectors.
 
 Uses the real Vector, Projection, and GramSchmidt classes from this
 package -- no reimplementation of any vector/projection math.
-
-Run as a script (from the parent directory of the package):
-    python -m mypackage.v05_gram_schmidt
 """
 
 from __future__ import annotations

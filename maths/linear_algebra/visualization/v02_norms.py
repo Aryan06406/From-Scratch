@@ -8,8 +8,7 @@ be compared against a second vector too — triangle inequality, "which
 vector is bigger", etc.) and a custom p, then renders every norm and a
 few norm-vs-norm comparisons as labelled matplotlib panels.
 
-Output: vector_norms_visualization.png saved next to this script, plus
-an interactive window if your environment supports one.
+Output: v02_norms.png saved next to this script
 """
 
 import math

@@ -3,15 +3,13 @@ v03_linear_transformation.py
 
 Visual companion to m03_linear_transformation.py.
 
-Linear transformations only have a clean *picture* in 2D (grids, unit
-squares, circles), so the geometric panels here all use 2x2 matrices —
+Linear transformations only have a clean picture in 2D (grids, unit
+squares, circles), so the geometric panels here all use 2x2 matrices 
 A is the main subject, B is a second 2x2 matrix used for the composition
 check, and v is a 2D vector used for the "transform a specific vector"
-panel. Trace/determinant/invertibility etc. are read straight from your
-LinearTransformation class, not recomputed.
+panel. 
 
-Output: v03_linear_transformation.png saved next to this
-script, plus an interactive window if your environment supports one.
+Output: v03_linear_transformation.png saved next to this script
 """
 
 import math
