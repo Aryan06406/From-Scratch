@@ -66,6 +66,9 @@ class Event:
     def __invert__(self) -> "Event":
         return SetOperations.complement(self)
 
+    def __eq__(self, other: "Event") -> bool:
+        return (isinstance(other, Event) and self.outcomes == other.outcomes and self.sample_space == other.sample_space)
+
 # Set Operations: Implements common set operations on events. 
 class SetOperations:
     @staticmethod
@@ -99,6 +102,7 @@ class SetOperations:
 class ProbabilityMeasure:
     def __init__(self, sample_space: SampleSpace, weights: Optional[Dict[Any, float]] = None):
         self.sample_space = sample_space
+        self.weights = dict(weights)
         # Uniform probability distribution
         if weights is None:
             n = len(sample_space)
