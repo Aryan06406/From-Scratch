@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 # Sample Space
 # Represents the sample space (Ω) of a random experiment.
@@ -140,6 +140,27 @@ class ConditionalProbability:
         p_A_and_B = self.probability_measure(intersection)
         return p_A_and_B / p_B
 
+# Maps outcomes from a sample space to numeric values.
+class RandomVariable:
+    def __init__(self, sample_space: SampleSpace, mapping: Callable[[Any], float]):
+        self.sample_space = sample_space
+        self.mapping = mapping
+
+    def __call__(self, outcome: Any) -> float:
+        if outcome not in self.sample_space:
+            raise ValueError("Outcome not in sample space.")
+        return self.mapping(outcome)  
+
+    # Constructs Event {ω ∈ Ω : X(ω) == value}.
+    def event_equals(self, value: float) -> Event:
+        outcomes = {outcome for outcome in self.sample_space.outcomes if self.mapping(outcome) == value}
+        return Event(f"X = {value}", outcomes, self.sample_space)  
+
+    # Constructs Event {ω ∈ Ω : X(ω) <= value}.
+    def event_less_than_or_equal(self, value: float) -> Event:
+        outcomes = {outcome for outcome in self.sample_space.outcomes if self.mapping(outcome) <= value}
+        return Event(f"X <= {value}", outcomes, self.sample_space)
+    
 # Example Usage
 if __name__ == "__main__":
 
@@ -156,6 +177,30 @@ if __name__ == "__main__":
     complement = ~even
     difference = greater_than_3 - even
 
+    # Random Variable
+    # X(ω) = ω² (square of the die outcome)
+    X = RandomVariable(omega, lambda outcome: outcome ** 2)
+
+    print("Random Variable X(ω) = ω²")
+    for outcome in sorted(omega.outcomes):
+        print(f"X({outcome}) = {X(outcome)}")
+
+    print()
+
+    # Events induced by the random variable
+    X_equals_16 = X.event_equals(16)
+    X_at_most_9 = X.event_less_than_or_equal(9)
+
+    print(f"{X_equals_16.name}: {X_equals_16.outcomes}")
+    print(f"{X_at_most_9.name}: {X_at_most_9.outcomes}")
+
+    print()
+
+    # Probabilities of the induced events
+    print(f"P({X_equals_16.name}) = {P(X_equals_16):.2f}")
+    print(f"P({X_at_most_9.name}) = {P(X_at_most_9):.2f}")
+
+    # Other outputs
     print("Intersection :", intersection.outcomes)
     print("Union        :", union.outcomes)
     print("Complement   :", complement.outcomes)
