@@ -9,7 +9,7 @@ class BayesTheorem:
 
     # Computes P(H|E) using instantiated Event and ProbabilityMeasure objects
     def compute_from_events(self, hypothesis: Event, evidence: Event) -> float:
-        p_evidence = self.prob_measure.P(hypothesis)
+        p_evidence = self.prob_measure.P(evidence)
         if p_evidence == 0:
             raise ValueError("P(Evidence is 0, posterior is undefined)")
         p_hypothesis = self.prob_measure.P(hypothesis)    # Prior: P(H)
