@@ -69,6 +69,24 @@ class Event:
     def __eq__(self, other: "Event") -> bool:
         return (isinstance(other, Event) and self.outcomes == other.outcomes and self.sample_space == other.sample_space)
 
+    def is_superset(self, other: "Event") -> bool:
+        return self.outcomes.issuperset(other.outcomes)
+
+    def contains(self, outcome: Any) -> bool:
+        return outcome in self.outcomes
+
+    def __contains__(self, outcome: Any) -> bool:
+        return self.contains(outcome)
+
+    def copy(self, name: Optional[str] = None) -> "Event":
+        event_name = name or self.name
+        return Event(event_name, self.outcomes.copy(), self.sample_space) 
+
+    @classmethod  
+    def from_predicted(cls, name: str, sample_space: SampleSpace, predicate: Callable[[Any], bool]) -> "Event":
+        outcomes = {outcome for outcome in sample_space.outcomes if predicate(outcome)}
+        return cls(name, outcomes, sample_space)
+
 # Set Operations: Implements common set operations on events. 
 class SetOperations:
     @staticmethod
@@ -181,6 +199,9 @@ if __name__ == "__main__":
     # X(ω) = ω² (square of the die outcome)
     X = RandomVariable(omega, lambda outcome: outcome ** 2)
 
+    # Probability Measure 
+    P = ProbabilityMeasure(omega)
+
     print("Random Variable X(ω) = ω²")
     for outcome in sorted(omega.outcomes):
         print(f"X({outcome}) = {X(outcome)}")
@@ -209,8 +230,6 @@ if __name__ == "__main__":
     print()
 
     # Probability Measure
-    P = ProbabilityMeasure(omega)
-
     print(f"P(Even) = {P(even):.2f}")
     print(f"P(Greater Than 3) = {P(greater_than_3):.2f}")
     print(f"P(Even ∩ >3) = {P(intersection):.2f}")
