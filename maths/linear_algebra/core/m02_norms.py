@@ -8,8 +8,9 @@ Topics covered
 - Manhattan norm (L1)
 - Euclidean norm (L2)
 - Infinity norm (L∞)
-- General p-norm
+- General p norm
 """
+
 from __future__ import annotations
 from maths.linear_algebra.core.m01_vector_ops import Vector
 
