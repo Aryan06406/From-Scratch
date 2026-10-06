@@ -136,7 +136,7 @@ class Vector:
         theta = max(-1.0, min(1.0, theta))  # Prevents acos() from receiving values slightly outside [-1, 1].
         return math.degrees(math.acos(theta)) 
     
-    # Computes the Hadamard (element-wise) product. Not the same as the dot product.
+    # Computes the Hadamard (element wise) product. 
     def hadamard_product(self, other: "Vector") -> "Vector":
         self._check_dimension(other)
         return Vector([x * y for x, y in zip(self, other)])
