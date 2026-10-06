@@ -14,6 +14,5 @@ __pycache__/
 *.sublime-
 .hintrc
 
-# Ignore any other files you don't want to track
-.github/
+# Ignore other files
 figures/
