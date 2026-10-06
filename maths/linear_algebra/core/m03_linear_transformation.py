@@ -6,12 +6,12 @@ Implementation of matrices and linear transformations from scratch.
 Topics covered
 --------------
 - Matrix arithmetic
-- Matrix-vector multiplication
-- Matrix-matrix multiplication
+- Matrix vector multiplication
+- Matrix matrix multiplication
 - Transpose
 - Trace
 - Determinant (recursive & Gaussian elimination)
-- Matrix inverse (Adjoint & Gauss-Jordan)
+- Matrix inverse (Adjoint & Gauss Jordan)
 - Identity and zero matrices
 - Structural matrix properties
 """
