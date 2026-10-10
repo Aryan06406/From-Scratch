@@ -120,7 +120,7 @@ class SetOperations:
 class ProbabilityMeasure:
     def __init__(self, sample_space: SampleSpace, weights: Optional[Dict[Any, float]] = None):
         self.sample_space = sample_space
-        self.weights = dict(weights)
+        
         # Uniform probability distribution
         if weights is None:
             n = len(sample_space)
