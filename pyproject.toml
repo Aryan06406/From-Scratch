@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "from-scratch-maths"
+version = "0.1.0"
+description = "Mathematics and machine learning algorithms implemented from scratch"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy==1.26.4",
+    "matplotlib==3.9.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["maths*"]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "maths/linear_algebra/tests",
+    "maths/probability/tests",
+]
+python_files = ["t*.py", "test_*.py"]
