@@ -27,4 +27,14 @@ testpaths = [
     "maths/linear_algebra/tests",
     "maths/probability/tests",
 ]
-python_files = ["t*.py", "test_*.py"]
+python_files = ["t*.py", "a*.py", "test_*.py"]
+markers = [
+    "unit: conventional example-based unit tests",
+    "boundary: boundary-value and edge-case tests",
+    "property: Hypothesis property-based tests",
+    "invariance: invariance and symmetry tests",
+    "numeric: floating-point precision and tolerance tests",
+    "reference: tests against independent reference implementations",
+    "scaling: asymptotic complexity and convergence tests",
+    "stress: extreme-magnitude and numerical-stability tests",
+]
