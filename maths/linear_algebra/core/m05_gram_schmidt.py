@@ -47,10 +47,13 @@ class GramSchmidt:
         for vector in vectors:
             if not isinstance(vector, Vector):
                 raise TypeError("All elements must be Vector instances.")
+            norm_in = vector.magnitude()
+            if norm_in == 0:
+                continue      # Skip the zero vector    
             # Compute the component orthogonal to the current basis.
             orthogonal = GramSchmidt.orthogonalize_vector(vector, basis)
             # Ignore vectors that are linearly dependent.
-            if orthogonal.magnitude() < 1e-9:
+            if orthogonal.magnitude() <= 1e-9 * norm_in:
                 continue
             basis.append(orthogonal)
         if not basis:
@@ -75,7 +78,11 @@ class GramSchmidt:
         n = len(vectors)
         for i in range(n - 1):
             for j in range(i + 1, n):
-                if abs(vectors[i].dot_product(vectors[j])) > 1e-9:
+                norm_i = vectors[i].magnitude()
+                norm_j = vectors[j].magnitude()
+                if norm_i == 0 or norm_j == 0:
+                    return False  # Zero vector cannot be part of an orthogonal basis
+                if abs(vectors[i].dot_product(vectors[j])) > 1e-9 * norm_i * norm_j:
                     return False
         return True
 

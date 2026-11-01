@@ -19,11 +19,18 @@ Topics covered
 
 from __future__ import annotations
 import math 
+from numbers import Real 
 
 class Vector:
+    __array_ufunc__ = None      # makes return NotImplemented -> Python calls Vector.__rmul__
+
     # Initialise a vector
     def __init__(self, elements: list[float] | tuple[float, ...]) -> None:
-        self.elements = list(elements)
+        elems = list(elements)
+        for x in elems:
+            if not isinstance(x, Real):
+                raise TypeError(f"Vector elements must be real numbers, got {type(x).__name__}.")
+        self.elements = elems
 
     # Returns a string representation of the vector
     def __str__(self) -> str:
@@ -74,25 +81,25 @@ class Vector:
     
     # Scalar multiplication: αv 
     def __mul__(self, scalar: int | float) -> "Vector":
-        if not isinstance(scalar, (int, float)):
+        if not isinstance(scalar, (int, Real)):
             return NotImplemented
         return Vector([a * scalar for a in self.elements])
     
-    def __rmul__(self, scalar: int | float) -> "Vector":
+    def __rmul__(self, scalar: int | Real) -> "Vector":
         return self.__mul__(scalar)
     
     # Scalar division
     # True division: v / α
-    def __truediv__(self, scalar: int | float) -> "Vector":
-        if not isinstance(scalar, (int, float)):
+    def __truediv__(self, scalar: int | Real) -> "Vector":
+        if not isinstance(scalar, (int, Real)):
             return NotImplemented
         if scalar == 0:
             raise ZeroDivisionError("Cannot divide by zero.")
         return Vector([y / scalar for y in self.elements]) 
     
     # Floor division (round offs to the closest value)
-    def __floordiv__(self, scalar: int | float) -> "Vector":
-        if not isinstance(scalar, (int, float)):
+    def __floordiv__(self, scalar: int | Real) -> "Vector":
+        if not isinstance(scalar, (int, Real)):
             return NotImplemented
         if scalar == 0:
             raise ZeroDivisionError("Cannot divide by zero.")
@@ -132,9 +139,11 @@ class Vector:
     def angle_between_vectors(self, other: "Vector") -> float:
         if self.magnitude() == 0 or other.magnitude() == 0:
             raise ZeroDivisionError("Angle with zero vector is undefined.")
-        theta = ((self.dot_product(other)) / ((self.magnitude()) * (other.magnitude())))
-        theta = max(-1.0, min(1.0, theta))  # Prevents acos() from receiving values slightly outside [-1, 1].
-        return math.degrees(math.acos(theta)) 
+        cos_theta = self.dot_product(other) / (self.magnitude() * other.magnitude())
+        if math.isnan(cos_theta):
+            raise ValueError("Angle is undefined for NaN/inf components.")
+        cos_theta = max(-1.0, min(1.0, cos_theta))
+        return math.degrees(math.acos(cos_theta))
     
     # Computes the Hadamard (element wise) product. 
     def hadamard_product(self, other: "Vector") -> "Vector":
@@ -153,6 +162,8 @@ class Vector:
     def is_parallel(self, other: "Vector") -> bool:
         self._check_dimension(other)
         ratio = None
+        if all(a == 0 for a in self) or all(b == 0 for b in other):
+            return True
         for a, b in zip(self, other):
             if a == 0 and b == 0:
                 continue

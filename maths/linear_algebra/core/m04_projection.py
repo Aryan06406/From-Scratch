@@ -23,33 +23,32 @@ class Projection:
     # - Both vectors must have the same dimension. 
     # - The vector being projected onto must be non-zero.
     @staticmethod
-    def validate_projetion_vectors(u: Vector, v: Vector):
-        Projection._validate_projcetion_vectors(u, v)
+    def validate_projection_vectors(u: Vector, v: Vector):
+        Projection._validate_projection_vectors(u, v)
 
     # Internal helper
     # Internal helper for validating projection operands.
     @staticmethod
-    def _validate_projcetion_vectors(u: Vector, v: Vector):
-        if not isinstance(u, Vector):
-            raise TypeError("The given input is not a vector.")
-        if not isinstance(v, Vector):
-            raise TypeError("The given input is not a vector.")
+    def _validate_projection_vectors(u: Vector, v: Vector):
+        if not isinstance(u, Vector) or not isinstance(v, Vector):
+            raise TypeError("Both inputs must be Vector instances.")
         u.check_dimension(v)
-        if abs(v.dot_product(v)) < 1e-9:
+        if all(x == 0 for x in v):
             raise ValueError("Cannot project onto the zero vector.")
     
     # Computes the scalar projection of vector u onto vector v: comp_v(u) = (u · v) / ||v||
     @staticmethod
     def scalar_projection(u: Vector, v: Vector) -> float:
-        Projection._validate_projcetion_vectors(u, v)
+        Projection._validate_projection_vectors(u, v)
         return u.dot_product(v) / v.magnitude()
 
     # Computes the vector projection of u onto v: proj_v(u) = ((u · v) / (v · v)) v
     @staticmethod
     def vector_projection(u: Vector, v: Vector) -> Vector:
-        Projection._validate_projcetion_vectors(u, v)
-        scalar = u.dot_product(v) / v.dot_product(v)
-        return scalar * v
+        Projection._validate_projection_vectors(u, v)
+        scale = max(abs(x) for x in v)
+        vs = v / scale                      # entries in [-1, 1]
+        return (u.dot_product(vs) / vs.dot_product(vs)) * vs
     
     # Computes the rejection of u from v: rej_v(u) = u − proj_v(u)
     @staticmethod
@@ -66,24 +65,16 @@ class Projection:
     # P = (v vᵀ) / (vᵀv)
     @staticmethod
     def projection_matrix(v: Vector) -> LinearTransformation:
+        if not isinstance(v, Vector):
+            raise TypeError("Input must be a vector.")
         # The denominator is ||v||².
-        denominator = v.dot_product(v)
-        if abs(denominator) < 1e-9:
+        scale = max((abs(x) for x in v), default=0)
+        if scale == 0:
             raise ValueError("Zero vector has no projection matrix.")
-        n = len(v)
-        matrix = []
-        # Construct the outer product vvᵀ
-        for i in range(n):
-            new_row = []
-            for j in range(n):
-                # Each entry is vi * vj.
-                new_row.append(v[i] * v[j])
-            matrix.append(new_row)
-        # Scale the outer product by 1/(vᵀv) to obtain the projection matrix.
-        for i in range(n):
-            for j in range(n):
-                matrix[i][j] /= denominator
-        return LinearTransformation(matrix) 
+        vs = v / scale
+        denom = vs.dot_product(vs)
+        matrix = [[vs[i] * vs[j] / denom for j in range(len(vs))] for i in range(len(vs))]
+        return LinearTransformation(matrix)
 
 if __name__ == "__main__":
     n1 = int(input("Enter the dimension of vector 1: "))

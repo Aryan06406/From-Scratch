@@ -16,6 +16,7 @@ Topics covered
 """
 
 from __future__ import annotations
+import sys
 from maths.linear_algebra.core.m01_vector_ops import Vector
 from maths.linear_algebra.core.m03_linear_transformation import LinearTransformation
 
@@ -24,6 +25,8 @@ class FundamentalSubspaces:
     # Computes and stores the Reduced Row Echelon Form (RREF)
     # together with the pivot column indices.
     def __init__(self, matrix: LinearTransformation) -> None:
+        if not isinstance(matrix, LinearTransformation):
+            raise TypeError("Expected a LinearTransformation.")
         self.matrix = matrix
         self._rref, self._pivot_cols = self._compute_rref_with_pivots()
 
@@ -37,13 +40,18 @@ class FundamentalSubspaces:
         mat = [row[:] for row in self.matrix]  
         m, n = self.matrix.shape
         # Current row where the next pivot will be placed.
+
+        # Matrix relative tolerance.
+        scale = max((abs(x) for row in mat for x in row), default=0.0)
+        tol = max(m, n) * sys.float_info.epsilon * scale
+
         pivot_row = 0       
         pivot_cols = []
         for col in range(n):
             # Search for a non zero pivot in the current column.
             found = None
             for row in range(pivot_row, m):
-                if abs(mat[row][col]) > 1e-9:
+                if abs(mat[row][col]) > tol:
                     found = row
                     break
             # This column contains no pivot. Move to the next column.    

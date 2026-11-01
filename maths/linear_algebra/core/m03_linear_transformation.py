@@ -66,6 +66,8 @@ class LinearTransformation:
 
     # Internal helper for validating equal matrix dimensions.
     def _check_same_shape(self, other: "LinearTransformation") -> None:
+        if not isinstance(other, LinearTransformation):
+            raise TypeError(f"Operand must be a matrix, got {type(other).__name__}.")
         if self.shape != other.shape:
             raise ValueError(f"Shape mismatch: {self.shape} vs {other.shape}")
         
@@ -178,31 +180,30 @@ class LinearTransformation:
         if matrix is None:
             self._check_square()
             matrix = self.matrix
+        else:
+            n = len(matrix)
+            if any(len(row) != n for row in matrix):
+                raise ValueError("Determinant requires a square matrix.")
+        return self._det(matrix)
+
+    @staticmethod
+    def _det(matrix: list[list[float]]) -> float:
         n = len(matrix)
-        # Base case: 1x1 matrix
+        if n == 0:
+            return 1
         if n == 1:
-            return matrix[0][0]   
-        # Base case: 2x2 matrix 
+            return matrix[0][0]
         if n == 2:
-            return (matrix[0][0] * matrix[1][1]) - (matrix[0][1] * matrix[1][0])
+            return matrix[0][0]*matrix[1][1] - matrix[0][1]*matrix[1][0]
         det = 0
-        # Cofactor expansion along the first row
         for col in range(n):
-            minor = []               # Create minor matrix
-            for row in range(1, n):
-                minor_row = []
-                for j in range(n):
-                    if j != col:
-                        minor_row.append(matrix[row][j])
-                minor.append(minor_row)
-            # Add / Subtract cofactor 
-            sign = (-1) ** col
-            det += sign * matrix[0][col] * self.determinant(minor)   
+            minor = [[matrix[r][j] for j in range(n) if j != col] for r in range(1, n)]
+            det += (-1) ** col * matrix[0][col] * LinearTransformation._det(minor)
         return det
     
     # Computes the determinant using Gaussian elimination. 
     # Time complexity: O(n^3)
-    def determinant_optimised(self, matrix = None) -> float:
+    def determinant_optimised(self) -> float:
         self._check_square()
         n = self.shape[0]
  
@@ -251,7 +252,7 @@ class LinearTransformation:
                     [self.matrix[x][y] for y in range(n) if y != j]
                     for x in range(n) if x != i
                 ]
-                value = ((-1) ** (i + j)) * self.determinant(minor)
+                value = ((-1) ** (i + j)) * self._det(minor)
                 row.append(value)
             cofactors.append(row)
         adjugate = LinearTransformation(cofactors).transpose()   # Adjugate = transpose of cofactor matrix

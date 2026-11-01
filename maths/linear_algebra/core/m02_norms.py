@@ -12,6 +12,7 @@ Topics covered
 """
 
 from __future__ import annotations
+import math
 from maths.linear_algebra.core.m01_vector_ops import Vector
 
 class Norms:
@@ -45,8 +46,10 @@ class Norms:
     
     # Computes the general p-norm: ||x||p = (Σ |xi|ᵖ)^(1/p), where p > 0
     def p_norm(self, p: int | float) -> float:
-        if p <= 0:
-            raise ValueError("p must be greater than zero.")
+        if math.isnan(p) or p <= 0:
+            raise ValueError("p must be a positive number.")
+        if p == math.inf:
+            return self.infinity_norm()
         total = 0
         for x in self.vector:
             total += abs(x) ** p
