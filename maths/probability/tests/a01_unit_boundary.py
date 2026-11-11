@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from maths.probability.core.m00_probability_foundations import (
-    ConditionalProbability, Event, ProbabilityMeasure, RandomVariable, SampleSpace, SetOperations)
+    ConditionalProbability, Event, ProbabilityMeasure, RandomVariable, SampleSpace)
 from maths.probability.core.m01_bayes_theorem import BayesTheorem
 from maths.probability.core.m02_distributions import (
     BernoulliDistribution, BetaDistribution, BinomialDistribution, ContinuousUniformDistribution,
@@ -14,8 +14,7 @@ from maths.probability.core.m02_distributions import (
 
 NAN, INF = float("nan"), float("inf")
 
-
-# ===================================================================== foundations
+# foundations
 @pytest.mark.boundary
 class TestSampleSpaceAndEvents:
     def test_empty_sample_space_rejected(self):
@@ -65,7 +64,6 @@ class TestSampleSpaceAndEvents:
         S = SampleSpace(range(3))
         assert Event("g", (x for x in range(2)), S).cardinality() == 2
 
-
 @pytest.mark.boundary
 class TestProbabilityMeasure:
     S = SampleSpace(["a", "b", "c"])
@@ -83,12 +81,10 @@ class TestProbabilityMeasure:
 
     @pytest.mark.parametrize("bad", [NAN, INF, -INF], ids=["nan", "inf", "-inf"])
     def test_non_finite_weights_rejected(self, bad):
-        """BUG: NaN passes every comparison (`nan < 0`, `abs(nan-1) > tol` are both False)."""
         with pytest.raises(ValueError):
             ProbabilityMeasure(self.S, {"a": bad, "b": 0.5, "c": 0.5})
 
     def test_weights_dict_is_not_aliased(self):
-        """BUG-candidate: self.weights is the caller's dict; later mutation silently breaks the axioms."""
         w = {"a": 0.2, "b": 0.3, "c": 0.5}
         P = ProbabilityMeasure(self.S, w)
         w["a"] = 5.0
@@ -111,7 +107,6 @@ class TestProbabilityMeasure:
             P(Event("x", [1], SampleSpace([1, 2])))
 
     def test_tolerance_policies_are_consistent_between_modules(self):
-        """BUG: measure demands |sum-1| <= 1e-9, Bayes partition accepts up to 1e-6 for the same priors."""
         priors = {"a": 0.5 + 5e-8, "b": 0.5}
         accepted_by_measure = True
         try:
@@ -124,7 +119,6 @@ class TestProbabilityMeasure:
         except ValueError:
             accepted_by_bayes = False
         assert accepted_by_measure == accepted_by_bayes
-
 
 @pytest.mark.boundary
 class TestConditionalAndRandomVariable:
@@ -165,7 +159,6 @@ class TestBayes:
         assert BayesTheorem(P).compute_from_events(D, T) == pytest.approx(0.0095 / 0.059)
 
     def test_zero_prior_hypothesis_has_zero_posterior(self):
-        """BUG: P(H)=0, P(E)>0 => P(H|E)=0 is well defined, but compute() raises 'P(B)=0'."""
         S = SampleSpace([1, 2, 3])
         P = ProbabilityMeasure(S, {1: 0.5, 2: 0.5, 3: 0.0})
         assert BayesTheorem(P).compute_from_events(Event("H", [3], S), Event("E", [1, 3], S)) == 0
@@ -189,17 +182,15 @@ class TestBayes:
         ({"a": NAN, "b": 0.5}, {"a": 0.5, "b": 0.5}, "a"),                # NaN prior
     ], ids=["keys", "sum", "target", "neg-prior", "like>1", "like<0", "nan-like", "nan-prior"])
     def test_partition_input_validation(self, priors, likes, target):
-        """BUG: only keys / sum / target are validated; negative priors and invalid likelihoods pass
-        and produce 'posteriors' outside [0, 1]."""
         with pytest.raises(ValueError):
             BayesTheorem.compute_from_partition(priors, likes, target)
 
-
-# ===================================================================== distributions
+# distributions
 INVALID_PARAMS = [
     (BernoulliDistribution, (-0.1,)), (BernoulliDistribution, (1.1,)), (BernoulliDistribution, (NAN,)),
-    (BinomialDistribution, (0, 0.5)), (BinomialDistribution, (-3, 0.5)), (BinomialDistribution, (5, 1.5)),
-    (BinomialDistribution, (5, NAN)), (BinomialDistribution, (2.5, 0.5)),
+    (BinomialDistribution, (0, 0.5)), 
+    (BinomialDistribution, (-3, 0.5)), (BinomialDistribution, (5, 1.5)), (BinomialDistribution, (5, NAN)), 
+    (BinomialDistribution, (2.5, 0.5)),
     (GeometricDistribution, (0.0,)), (GeometricDistribution, (-0.1,)), (GeometricDistribution, (1.5,)),
     (GeometricDistribution, (NAN,)),
     (PoissonDistribution, (0,)), (PoissonDistribution, (-1,)), (PoissonDistribution, (NAN,)),
@@ -210,19 +201,16 @@ INVALID_PARAMS = [
     (GaussianDistribution, (NAN, 1)),
     (GammaDistribution, (0, 1)), (GammaDistribution, (1, 0)), (GammaDistribution, (-1, 1)),
     (GammaDistribution, (NAN, 1)), (GammaDistribution, (1, NAN)),
-    (BetaDistribution, (0, 1)), (BetaDistribution, (1, 0)), (BetaDistribution, (NAN, 1)), (BetaDistribution, (1, NAN)),
+    (BetaDistribution, (0, 1)), (BetaDistribution, (1, 0)), (BetaDistribution, (NAN, 1)), (BetaDistribution, (1, NAN))
 ]
-
 
 @pytest.mark.boundary
 class TestDistributionParameterValidation:
     @pytest.mark.parametrize("cls,args", INVALID_PARAMS,
                              ids=[f"{c.__name__[:-12]}{a}" for c, a in INVALID_PARAMS])
     def test_invalid_parameters_are_rejected(self, cls, args):
-        """Known gaps: Geometric(p=0), Exponential(rate=0), Binomial(n=2.5) and every NaN-accepting `<=` guard."""
         with pytest.raises(ValueError):
             cls(*args)
-
 
 @pytest.mark.boundary
 class TestDiscreteBoundaries:
@@ -250,7 +238,6 @@ class TestDiscreteBoundaries:
 
     @pytest.mark.parametrize("cdf_arg", [2.5, 2.999, 0.2, 9.5])
     def test_binomial_cdf_accepts_real_arguments(self, cdf_arg):
-        """BUG: CDFs are defined on all reals; Bernoulli.cdf(0.5) works but Binomial.cdf(2.5) raises TypeError."""
         d = BinomialDistribution(10, 0.4)
         assert d.cdf(cdf_arg) == pytest.approx(d.cdf(math.floor(cdf_arg)))
 
@@ -258,7 +245,6 @@ class TestDiscreteBoundaries:
                                       lambda: BinomialDistribution(5, 0.3), lambda: BernoulliDistribution(0.3)],
                              ids=["geometric", "poisson", "binomial", "bernoulli"])
     def test_cdf_is_zero_below_support(self, make):
-        """BUG: Geometric.cdf(0) and Poisson.cdf(-1) raise instead of returning 0.0."""
         d = make()
         assert d.cdf(-1) == 0.0 and d.cdf(-100) == 0.0
         if isinstance(d, GeometricDistribution):
@@ -267,14 +253,12 @@ class TestDiscreteBoundaries:
     @pytest.mark.parametrize("make", [lambda: GeometricDistribution(0.3), lambda: PoissonDistribution(2.0)],
                              ids=["geometric", "poisson"])
     def test_cdf_accepts_non_integer_reals(self, make):
-        """BUG: `floor(k)` in Geometric.cdf shows intent, but `isinstance(k, int)` rejects every float."""
         d = make()
         assert d.cdf(3.7) == pytest.approx(d.cdf(3))
 
     @pytest.mark.parametrize("make", [lambda: BinomialDistribution(10, 0.4), lambda: GeometricDistribution(0.3),
                                       lambda: PoissonDistribution(2.0)], ids=["binomial", "geometric", "poisson"])
     def test_numpy_integers_accepted(self, make):
-        """BUG-candidate: isinstance(np.int64(3), int) is False => ValueError for data straight from numpy."""
         d = make()
         assert d.pmf(np.int64(3)) == pytest.approx(d.pmf(3))
 
@@ -293,7 +277,6 @@ class TestDiscreteBoundaries:
         assert e.pmf(0) == pytest.approx(math.exp(-3)) and e.variance() == e.expected_value() == 3.0
         with pytest.raises(ValueError):
             e.pmf(-1)
-
 
 @pytest.mark.boundary
 class TestContinuousBoundaries:
@@ -316,20 +299,16 @@ class TestContinuousBoundaries:
 
     @pytest.mark.parametrize("x", [1e155, -1e155, 1e200, 1e300])
     def test_gaussian_pdf_far_tail_is_zero_not_an_exception(self, x):
-        """BUG: (x-mu)**2 overflows -> OverflowError, while the correct density is exactly 0.0 (underflow)."""
         assert GaussianDistribution(0, 1).pdf(x) == 0.0
 
     @pytest.mark.parametrize("alpha", [0.1, 0.5, 0.99])
     def test_gamma_with_shape_below_one(self, alpha):
-        """BUG: 0.0 ** (alpha-1) raises ZeroDivisionError => pdf(0) crashes AND cdf(x) crashes for ALL x
-        (Simpson evaluates the integrand at 0)."""
         d = GammaDistribution(alpha, 1.0)
         assert d.pdf(0) == INF or d.pdf(0) > 1e300
         assert 0.0 < d.cdf(1.0) < 1.0
 
     @pytest.mark.parametrize("a,b", [(0.5, 0.5), (0.5, 2.0), (2.0, 0.5)], ids=["arcsine", "a<1", "b<1"])
     def test_beta_with_shape_below_one(self, a, b):
-        """BUG: same `0.0 ** negative` crash at the endpoints; cdf(0.5) crashes."""
         d = BetaDistribution(a, b)
         assert 0.0 < d.cdf(0.5) < 1.0
         assert d.cdf(1.0) == pytest.approx(1.0, abs=1e-6)
