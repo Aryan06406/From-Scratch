@@ -1,6 +1,7 @@
 """
-Asymptotic / convergence-order / limit-theorem / complexity tests for maths.probability.
+Asymptotic / convergence-order / limit theorem / complexity tests for maths.probability.
 """
+
 import math
 
 import numpy as np
@@ -13,8 +14,7 @@ from maths.test_helpers import best_time, growth_exponent, time_limit
 
 simpson = ContinuousDistribution._integrate_simpson
 
-
-# ================================================================ Simpson convergence order
+# Simpson convergence order
 @pytest.mark.scaling
 class TestSimpsonRule:
     def test_exact_for_cubics(self):
@@ -34,19 +34,16 @@ class TestSimpsonRule:
         assert simpson(math.sin, 0.5, 0.5, 10) == 0.0
 
     def test_integrable_endpoint_singularity_degrades_order(self):
-        """f=sqrt(x): Simpson drops to ~1.5 order. Documents why Beta/Gamma with shape<2 lose digits."""
         errs = [abs(simpson(math.sqrt, 0.0, 1.0, n) - 2 / 3) for n in (16, 32, 64, 128)]
         orders = [math.log2(a / b) for a, b in zip(errs, errs[1:])]
         assert all(o < 2.0 for o in orders)
 
     def test_fixed_panel_count_is_not_adaptive_to_interval_length(self):
-        """BUG (design): Gamma/Beta.cdf always use n=1000. Error must not blow up when the interval grows."""
         f = lambda x: math.exp(-x)
         for b in (10, 100, 1000, 10_000):
             assert simpson(f, 0.0, float(b), 1000) == pytest.approx(1 - math.exp(-b), abs=1e-6)
 
-
-# ================================================================ limit theorems / asymptotic agreement
+# limit theorems / asymptotic agreement
 @pytest.mark.reference
 class TestAsymptoticAgreement:
     @pytest.mark.parametrize("n", [50, 200, 800])
@@ -85,7 +82,6 @@ class TestAsymptoticAgreement:
         assert max(abs(d.cdf(k) - g.cdf(k + 0.5)) for k in range(int(lam - 4 * math.sqrt(lam)), hi)) <= 0.5 / math.sqrt(lam) * 0.3
 
     def test_law_of_large_numbers_by_exact_enumeration(self):
-        """P(|X/n - p| > 0.05) must fall (exponentially, Hoeffding) with n. Exact via the pmf, no sampling."""
         p, eps = 0.4, 0.05
         def tail(n):
             d = BinomialDistribution(n, p)
@@ -94,12 +90,10 @@ class TestAsymptoticAgreement:
         assert all(a > b for a, b in zip(tails, tails[1:]))
         assert all(t <= 2 * math.exp(-2 * n * eps ** 2) + 1e-12 for t, n in zip(tails, (50, 100, 200, 400, 800)))
 
-
-# ================================================================ computational complexity
+# computational complexity
 @pytest.mark.scaling
 class TestComplexity:
     def test_binomial_cdf_cost_grows_linearly_in_n(self):
-        """Ideal: O(n) via pmf recurrence. BUG: every pmf(i) recomputes math.comb => ~O(n^2) big-int work."""
         def t(n):
             d = BinomialDistribution(n, 0.5)
             return best_time(lambda: d.cdf(n - 1), 2)
@@ -108,7 +102,6 @@ class TestComplexity:
 
     @pytest.mark.parametrize("k", [150, 400, 1000])
     def test_poisson_cdf_is_computable_for_large_k(self, k):
-        """BUG: pmf(i) overflows for i>=171, so cdf(k>=171) raises for every lambda."""
         with time_limit(5):
             assert PoissonDistribution(float(k) / 2).cdf(k) == pytest.approx(1.0, abs=1e-3)
 
@@ -116,7 +109,7 @@ class TestComplexity:
         from maths.probability.core.m02_distributions import GammaDistribution
         d = GammaDistribution(2, 1)
         t1, t2 = best_time(lambda: d.cdf(1.0)), best_time(lambda: d.cdf(1e4))
-        assert t2 <= 3 * t1 + 1e-3          # fixed 1000 panels: cost independent of x (and accuracy is not!)
+        assert t2 <= 3 * t1 + 1e-3          
 
     def test_event_set_operations_are_linear(self):
         def t(n):
