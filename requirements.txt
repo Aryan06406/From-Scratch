@@ -1,4 +1,4 @@
 numpy==1.26.4
 matplotlib==3.9.2
-hypothesis==6.185.5
+hypothesis==6.169.0
 scipy==1.14.1
