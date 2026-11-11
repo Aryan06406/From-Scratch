@@ -20,8 +20,7 @@ from maths.probability.core.m02_distributions import (
 
 TOL = 1e-12
 
-
-# ---------------------------------------------------------------- strategies
+# strategies
 @st.composite
 def spaces_and_measure(draw, max_n=8):
     n = draw(st.integers(1, max_n))
@@ -31,10 +30,8 @@ def spaces_and_measure(draw, max_n=8):
     tot = sum(raw)
     return S, ProbabilityMeasure(S, {i: w / tot for i, w in enumerate(raw)})
 
-
 def subsets(S):
     return st.sets(st.sampled_from(sorted(S.outcomes)))
-
 
 @st.composite
 def model_with_events(draw, k=3):
@@ -42,16 +39,13 @@ def model_with_events(draw, k=3):
     evs = [Event(f"E{i}", draw(subsets(S)), S) for i in range(k)]
     return S, P, evs
 
-
 def full(S):
     return Event("Ω", S.outcomes, S)
-
 
 def empty(S):
     return Event("∅", [], S)
 
-
-# ================================================================ event algebra
+# event algebra
 @pytest.mark.property
 class TestEventAlgebra:
     @given(model_with_events())
@@ -78,8 +72,7 @@ class TestEventAlgebra:
         for w in S.outcomes:
             assert (w in A) != (w in ~A)
 
-
-# ================================================================ Kolmogorov axioms
+# Kolmogorov axioms
 @pytest.mark.property
 class TestProbabilityAxioms:
     @given(model_with_events())
@@ -89,7 +82,7 @@ class TestProbabilityAxioms:
         for E in (A, B, C):
             assert -TOL <= P(E) <= 1 + TOL
         assert abs(P(~A) - (1 - P(A))) <= TOL
-        assert abs(P(A | B) - (P(A) + P(B) - P(A & B))) <= TOL                  # inclusion-exclusion
+        assert abs(P(A | B) - (P(A) + P(B) - P(A & B))) <= TOL                  # inclusion exclusion
         assert P(A | B) <= P(A) + P(B) + TOL                                    # union bound
         assert abs(P(A | B | C) - (P(A) + P(B) + P(C) - P(A & B) - P(A & C) - P(B & C) + P(A & B & C))) <= 1e-11
         if A.is_subset(B):
@@ -119,8 +112,7 @@ class TestProbabilityAxioms:
         cp = ConditionalProbability(P)
         assert abs(P(A & B & C) - P(A) * cp.compute(B, A) * cp.compute(C, A & B)) <= 1e-11
 
-
-# ================================================================ Bayes
+# Bayes
 @st.composite
 def bayes_models(draw):
     k = draw(st.integers(2, 6))
@@ -129,7 +121,6 @@ def bayes_models(draw):
     lik = {f"h{i}": draw(st.integers(0, 100)) / 100 for i in range(k)}
     assume(sum(lik[h] * pri[h] for h in pri) > 1e-6)
     return pri, lik
-
 
 @pytest.mark.property
 class TestBayesProperties:
@@ -143,9 +134,18 @@ class TestBayesProperties:
     @given(bayes_models(), st.sampled_from([1e-3, 0.5, 2.0, 1e3]))
     def test_invariant_to_rescaling_all_likelihoods(self, m, c):
         pri, lik = m
+
+        # Keep all likelihoods within the valid probability range [0, 1].
+        max_likelihood = max(lik.values())
+        assume(max_likelihood > 0.0)
+
+        # Cap the scaling factor to prevent invalid probabilities.
+        scale = min(c, (1.0 - 1e-12) / max_likelihood)
+        scaled_likelihoods = {k: scale * v for k, v in lik.items()}
+
         for h in pri:
             a = BayesTheorem.compute_from_partition(pri, lik, h)
-            b = BayesTheorem.compute_from_partition(pri, {k: c * v for k, v in lik.items()}, h)
+            b = BayesTheorem.compute_from_partition(pri, scaled_likelihoods, h)
             assert abs(a - b) <= 1e-12
 
     @given(bayes_models())
@@ -174,8 +174,7 @@ class TestBayesProperties:
         assume(abs(sum(pri.values()) - 1) < 1e-9)
         assert abs(BayesTheorem.compute_from_partition(pri, lik, "H") - direct) <= 1e-9
 
-
-# ================================================================ discrete distributions
+# discrete distributions
 @pytest.mark.property
 class TestDiscreteDistributionLaws:
     @given(st.integers(1, 60), st.floats(0, 1))
@@ -190,11 +189,10 @@ class TestDiscreteDistributionLaws:
         for k in range(n + 1):
             run += pm[k]
             assert abs(d.cdf(k) - run) <= 1e-12                              # cdf == cumulative pmf
-        assert all(d.cdf(k) <= d.cdf(k + 1) + 1e-12 for k in range(n))      # monotone (rounding-level slack)
+        assert all(d.cdf(k) <= d.cdf(k + 1) + 1e-12 for k in range(n))      # monotone (rounding level slack)
 
     @given(st.integers(1, 80), st.floats(0, 1))
     def test_binomial_cdf_stays_inside_unit_interval_and_is_monotone_exactly(self, n, p):
-        """BUG: cdf(n-1) can come out as 1.0000000000000013 and then 'drops' to 1.0 at k=n."""
         d = BinomialDistribution(n, p)
         vals = [d.cdf(k) for k in range(n + 2)]
         assert all(0.0 <= v <= 1.0 for v in vals), max(vals)
@@ -228,20 +226,18 @@ class TestDiscreteDistributionLaws:
 
     @given(st.floats(0.05, 0.95), st.integers(1, 30), st.integers(1, 30))
     def test_geometric_memorylessness_and_normalisation(self, p, m, n):
-        assume((1 - p) ** (m + n) > 1e-6)           # 1-cdf cancels below ~1e-10; keep the oracle meaningful
+        assume((1 - p) ** (m + n) > 1e-6)        
         d = GeometricDistribution(p)
         surv = lambda k: 1 - d.cdf(k)
         assert surv(m + n) / surv(m) == pytest.approx(surv(n), rel=1e-9)
         assert d.pmf(m) == pytest.approx(d.cdf(m) - (d.cdf(m - 1) if m > 1 else 0), rel=1e-9, abs=1e-12)
         assert d.expected_value() * p == pytest.approx(1.0) and d.variance() == pytest.approx((1 - p) / p ** 2)
 
-
-# ================================================================ continuous distributions
+# continuous distributions
 def simpson(f, a, b, n=4000):
     h = (b - a) / n
     s = f(a) + f(b) + sum((4 if i % 2 else 2) * f(a + i * h) for i in range(1, n))
     return s * h / 3
-
 
 @pytest.mark.property
 class TestContinuousDistributionLaws:
@@ -261,7 +257,7 @@ class TestContinuousDistributionLaws:
         assert d.cdf(s) == pytest.approx(std.cdf(lam * s), rel=1e-9, abs=1e-300)
         assert d.pdf(s) == pytest.approx(lam * std.pdf(lam * s), rel=1e-9, abs=1e-300)
         sv = lambda x: 1 - d.cdf(x)
-        assume(lam * (s + t) < 8)                   # keep 1-cdf well above rounding noise
+        assume(lam * (s + t) < 8)                 
         assume(sv(s) > 1e-9)
         assert sv(s + t) / sv(s) == pytest.approx(sv(t), rel=1e-6, abs=1e-12)
         assert d.expected_value() * lam == pytest.approx(1.0) and d.variance() * lam ** 2 == pytest.approx(1.0)
