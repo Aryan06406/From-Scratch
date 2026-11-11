@@ -122,7 +122,7 @@ class Vector:
     
     # Euclidean norm (L2 norm) also same as magnitude: ||v|| = √(Σ vi²)
     def magnitude(self) -> float:
-        return math.sqrt(sum(x**2 for x in self.elements))  
+        return math.hypot(*self.elements)   # overflow/underflow-safe
     
     # Negation of vector
     def __neg__(self) -> "Vector":
@@ -135,15 +135,18 @@ class Vector:
             raise ZeroDivisionError("Zero vector doesn't have a defined unit vector.")
         return self / mag
     
-    # Computes the angle using: cos(θ) = (a·b)/(||a||||b||)
+    # Computes the angle between two vectors (degrees).
+    # Uses Kahan's formula  theta = 2*atan2(||a^ - b^||, ||a^ + b^||)  on the unit vectors,
+    # which stays accurate for tiny angles and near-antiparallel vectors (acos does not).
     def angle_between_vectors(self, other: "Vector") -> float:
-        if self.magnitude() == 0 or other.magnitude() == 0:
+        self._check_dimension(other)
+        ma, mb = self.magnitude(), other.magnitude()
+        if ma == 0 or mb == 0:
             raise ZeroDivisionError("Angle with zero vector is undefined.")
-        cos_theta = self.dot_product(other) / (self.magnitude() * other.magnitude())
-        if math.isnan(cos_theta):
+        if not (math.isfinite(ma) and math.isfinite(mb)):
             raise ValueError("Angle is undefined for NaN/inf components.")
-        cos_theta = max(-1.0, min(1.0, cos_theta))
-        return math.degrees(math.acos(cos_theta))
+        a, b = self / ma, other / mb
+        return math.degrees(2.0 * math.atan2((a - b).magnitude(), (a + b).magnitude()))
     
     # Computes the Hadamard (element wise) product. 
     def hadamard_product(self, other: "Vector") -> "Vector":
@@ -155,26 +158,24 @@ class Vector:
         return (self-other).magnitude()
     
     # Checks whether the vectors are orthogonal to each other or not
-    def is_orthogonal(self, other: "Vector") -> bool:
-        return abs(self.dot_product(other)) < 1e-9
-    
-    # Checks whether the vectors are parallel or not
-    def is_parallel(self, other: "Vector") -> bool:
+    # Scale-invariant: compares cos(theta) (dot of unit vectors) with a relative tolerance.
+    def is_orthogonal(self, other: "Vector", tol: float = 1e-9) -> bool:
         self._check_dimension(other)
-        ratio = None
-        if all(a == 0 for a in self) or all(b == 0 for b in other):
-            return True
-        for a, b in zip(self, other):
-            if a == 0 and b == 0:
-                continue
-            if a == 0 or b == 0:
-                return False
-            if ratio is None:
-                ratio = (a, b)
-            elif a * ratio[1] != b * ratio[0]:
-                return False
-        return True             
+        ma, mb = self.magnitude(), other.magnitude()
+        if ma == 0 or mb == 0:
+            return True          # zero vector is orthogonal to everything
+        return abs((self / ma).dot_product(other / mb)) <= tol
     
+    # Checks whether the vectors are parallel or not (tolerant of floating point rounding).
+    # Parallel  <=>  unit vectors coincide (a^ = b^) or are opposite (a^ = -b^).
+    def is_parallel(self, other: "Vector", tol: float = 1e-12) -> bool:
+        self._check_dimension(other)
+        ma, mb = self.magnitude(), other.magnitude()
+        if ma == 0 or mb == 0:
+            return True          # zero vector is parallel to everything (0 * v = 0)
+        a, b = self / ma, other / mb
+        return min((a - b).magnitude(), (a + b).magnitude()) <= tol
+
     # Normalise vectors
     def normalize(self):
         return self.unit_vector()
