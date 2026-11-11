@@ -1,14 +1,20 @@
 from __future__ import annotations
+
+import math
 from typing import Any, Callable, Dict, Iterable, Optional
+
+PROBABILITY_TOLERANCE = 1e-9
 
 # Sample Space
 # Represents the sample space (Ω) of a random experiment.
 # A sample space is the set of all possible outcomes.
 class SampleSpace:
     def __init__(self, outcomes: Iterable[Any]):
-        self.outcomes = set(outcomes)
-
-        if len(self.outcomes) == 0:
+        try:
+            self.outcomes = set(outcomes)
+        except TypeError as exc:
+            raise TypeError("Sample space outcomes must be hashable.") from exc
+        if not self.outcomes:
             raise ValueError("Sample space cannot be empty.")
 
     def __contains__(self, item: Any) -> bool:
@@ -26,6 +32,8 @@ class SampleSpace:
 # Event: An event is a subset of the sample space.
 class Event:
     def __init__(self, name: str, outcomes: Iterable[Any], sample_space: SampleSpace):
+        if not isinstance(sample_space, SampleSpace):
+            raise TypeError("sample_space must be a SampleSpace.")
         outcomes = set(outcomes)
         if not outcomes.issubset(sample_space.outcomes):
             raise ValueError("All event outcomes must belong to the sample space.")
@@ -39,7 +47,7 @@ class Event:
     # Event utilities
     # Returns True if the event contains no outcomes.
     def is_empty(self) -> bool:
-        return len(self.outcomes) == 0
+        return not self.outcomes
 
     # Returns the number of outcomes in the event.
     def cardinality(self) -> int:
@@ -52,6 +60,10 @@ class Event:
     # Checks if two events are disjoint. 
     def is_disjoint(self, other: "Event") -> bool:
         return self.outcomes.isdisjoint(other.outcomes)
+
+    def _check_other(self, other: "Event") -> None:
+        if not isinstance(other, Event) or self.sample_space != other.sample_space:
+            raise ValueError("Events must belong to the same sample space.")
 
     # Operator overloading
     def __or__(self, other: "Event") -> "Event":
@@ -66,7 +78,7 @@ class Event:
     def __invert__(self) -> "Event":
         return SetOperations.complement(self)
 
-    def __eq__(self, other: "Event") -> bool:
+    def __eq__(self, other: object) -> bool:
         return (isinstance(other, Event) and self.outcomes == other.outcomes and self.sample_space == other.sample_space)
 
     def is_superset(self, other: "Event") -> bool:
@@ -79,67 +91,77 @@ class Event:
         return self.contains(outcome)
 
     def copy(self, name: Optional[str] = None) -> "Event":
-        event_name = name or self.name
-        return Event(event_name, self.outcomes.copy(), self.sample_space) 
+        return Event(self.name if name is None else name, self.outcomes.copy(), self.sample_space)
 
-    @classmethod  
+    @classmethod
     def from_predicted(cls, name: str, sample_space: SampleSpace, predicate: Callable[[Any], bool]) -> "Event":
-        outcomes = {outcome for outcome in sample_space.outcomes if predicate(outcome)}
-        return cls(name, outcomes, sample_space)
+        return cls(name, (x for x in sample_space.outcomes if predicate(x)), sample_space)
 
 # Set Operations: Implements common set operations on events. 
 class SetOperations:
     @staticmethod
-    def union(e1: Event, e2: Event, name: Optional[str] = None) -> Event:
+    def _same_space(e1: Event, e2: Event) -> None:
         if e1.sample_space != e2.sample_space:
             raise ValueError("Events must belong to the same sample space.")
-        event_name = name or f"({e1.name} U {e2.name})"
-        return Event(event_name, e1.outcomes | e2.outcomes, e1.sample_space)
+
+    @staticmethod
+    def union(e1: Event, e2: Event, name: Optional[str] = None) -> Event:
+        SetOperations._same_space(e1, e2)
+        return Event(name or f"({e1.name} U {e2.name})", e1.outcomes | e2.outcomes, e1.sample_space)
 
     @staticmethod
     def intersection(e1: Event, e2: Event, name: Optional[str] = None) -> Event:
-        if e1.sample_space != e2.sample_space:
-            raise ValueError("Events must belong to the same sample space.")
-        event_name = name or f"({e1.name} ∩ {e2.name})"
-        return Event(event_name, e1.outcomes & e2.outcomes, e1.sample_space)
+        SetOperations._same_space(e1, e2)
+        return Event(name or f"({e1.name} ∩ {e2.name})", e1.outcomes & e2.outcomes, e1.sample_space)
 
     @staticmethod
     def complement(event: Event, name: Optional[str] = None) -> Event:
-        event_name = name or f"{event.name}ᶜ"
-        return Event(event_name, event.sample_space.outcomes - event.outcomes, event.sample_space)
+        return Event(name or f"{event.name}ᶜ", event.sample_space.outcomes - event.outcomes, event.sample_space)
 
     @staticmethod
     def difference(e1: Event, e2: Event, name: Optional[str] = None) -> Event:
-        if e1.sample_space != e2.sample_space:
-            raise ValueError("Events must belong to the same sample space.")
-        event_name = name or f"({e1.name} - {e2.name})"
-        return Event(event_name, e1.outcomes - e2.outcomes, e1.sample_space)
+        SetOperations._same_space(e1, e2)
+        return Event(name or f"({e1.name} - {e2.name})", e1.outcomes - e2.outcomes, e1.sample_space)
 
 # Probability Measure: Assigns probabilities to outcomes in a sample space. Supports 
 # both uniform and custom probability distributions.
 class ProbabilityMeasure:
+    """A probability measure over a finite sample space."""
+
     def __init__(self, sample_space: SampleSpace, weights: Optional[Dict[Any, float]] = None):
+        if not isinstance(sample_space, SampleSpace):
+            raise TypeError("sample_space must be a SampleSpace.")
         self.sample_space = sample_space
-        
-        # Uniform probability distribution
+
         if weights is None:
-            n = len(sample_space)
-            self.weights = {outcome: 1.0 / n for outcome in sample_space.outcomes}
-        else:
-            if set(weights.keys()) != sample_space.outcomes:
-                raise ValueError("Weights must be defined for every outcome.")
-            for probability in weights.values():
-                if probability < 0:
-                    raise ValueError("Probabilities cannot be negative.")
-            if abs(sum(weights.values()) - 1.0) > 1e-9:
-                raise ValueError("Probabilities must sum to 1.")
-            self.weights = weights
+            probability = 1.0 / len(sample_space)
+            self.weights = {outcome: probability for outcome in sample_space.outcomes}
+            return
+
+        if set(weights) != sample_space.outcomes:
+            raise ValueError("Weights must be defined for every outcome and no others.")
+
+        copied: Dict[Any, float] = {}
+        for outcome, raw_probability in weights.items():
+            try:
+                probability = float(raw_probability)
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError("Every probability weight must be a finite real number.") from exc
+            if not math.isfinite(probability):
+                raise ValueError("Probability weights must be finite.")
+            if probability < 0.0 or probability > 1.0:
+                raise ValueError("Every probability must lie in [0, 1].")
+            copied[outcome] = probability
+
+        if abs(math.fsum(copied.values()) - 1.0) > PROBABILITY_TOLERANCE:
+            raise ValueError("Probabilities must sum to 1.")
+        self.weights = copied
 
     # Allows probability measure to be called like: P(event)
     def __call__(self, event: Event) -> float:
-        if event.sample_space != self.sample_space:
+        if not isinstance(event, Event) or event.sample_space != self.sample_space:
             raise ValueError("Event belongs to a different sample space.")
-        return sum(self.weights[outcome] for outcome in event.outcomes)
+        return math.fsum(self.weights[outcome] for outcome in event.outcomes)
 
     # Alias for readability.
     def P(self, event: Event) -> float:
@@ -151,16 +173,16 @@ class ConditionalProbability:
         self.probability_measure = probability_measure
 
     def compute(self, event_A: Event, event_B: Event) -> float:
-        p_B = self.probability_measure(event_B)
-        if p_B == 0:
+        p_b = self.probability_measure(event_B)
+        if p_b == 0.0:
             raise ValueError("Conditional probability is undefined because P(B) = 0.")
-        intersection = event_A & event_B
-        p_A_and_B = self.probability_measure(intersection)
-        return p_A_and_B / p_B
+        return self.probability_measure(event_A & event_B) / p_b    
 
 # Maps outcomes from a sample space to numeric values.
 class RandomVariable:
     def __init__(self, sample_space: SampleSpace, mapping: Callable[[Any], float]):
+        if not isinstance(sample_space, SampleSpace):
+            raise TypeError("sample_space must be a SampleSpace.")
         self.sample_space = sample_space
         self.mapping = mapping
 
