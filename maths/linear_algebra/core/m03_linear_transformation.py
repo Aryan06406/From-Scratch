@@ -17,6 +17,9 @@ Topics covered
 """
 
 from __future__ import annotations
+import math
+import sys
+from numbers import Real
 from maths.linear_algebra.core.m01_vector_ops import Vector
 
 class LinearTransformation:
@@ -108,7 +111,7 @@ class LinearTransformation:
     # Performs scalar multiplication or matrix multiplication.
     # Scalar: αA   and    Matrix: AB
     def __mul__(self, other: int | float | "LinearTransformation") -> "LinearTransformation":
-        if isinstance(other, (int, float)):
+        if isinstance(other, Real):
             result = []
             for row in self.matrix:
                 new_row = [] 
@@ -239,6 +242,9 @@ class LinearTransformation:
     # Computes the inverse using the adjugate method: A^(-1) = (1 / det(A)) * adj(A) 
     # Time complexity: O(n!)
     def inverse(self) -> "LinearTransformation":
+        self._check_square()
+        if self.shape[0] > 6:                  # adjugate is O(n * n!), unusable beyond this
+            return self.inverse_optimised()
         det = self.determinant()
         if det == 0:
             raise ValueError("Matrix is singular and cannot be inverted.")
@@ -257,16 +263,27 @@ class LinearTransformation:
             cofactors.append(row)
         adjugate = LinearTransformation(cofactors).transpose()   # Adjugate = transpose of cofactor matrix
         # Divide by determinant
-        return LinearTransformation([
+        X = LinearTransformation([
             [adjugate[i][j] / det for j in range(n)]
             for i in range(n)
-        ])     
+        ])
+        # The adjugate formula suffers cancellation when det(A) is tiny relative to the entries.
+        # If the residual R = I - A X is visibly large, apply Newton-Schulz refinement
+        # X <- X + X R (the residual is squared each step). Well-conditioned inputs are untouched.
+        I = LinearTransformation.identity(n)
+        for _ in range(3):
+            R = I - self * X
+            if max(abs(v) for row in R for v in row) <= 1e-10:
+                break
+            X = X + X * R
+        return X
 
     # Computes the inverse using Gauss-Jordan elimination. 
     # Time complexity: O(n^3)
     def inverse_optimised(self) -> "LinearTransformation":
         self._check_square()
         n = self.shape[0]
+        tol = self._singular_tol()
  
         # Build augmented matrix [M | I]
         aug = [self.matrix[i][:] + [1.0 if i == j else 0.0 for j in range(n)]
@@ -275,7 +292,7 @@ class LinearTransformation:
         for col in range(n):
             # Partial pivot
             pivot_row = max(range(col, n), key=lambda r: abs(aug[r][col]))
-            if abs(aug[pivot_row][col]) < 1e-12:
+            if abs(aug[pivot_row][col]) <= tol:      # relative, not absolute
                 raise ValueError("Matrix is singular and cannot be inverted.")
             aug[col], aug[pivot_row] = aug[pivot_row], aug[col]
  
@@ -305,6 +322,14 @@ class LinearTransformation:
     def zeros(cls, rows: int, cols: int) -> "LinearTransformation":
         return cls([[0] * cols for _ in range(rows)])
     
+    # Frobenius norm (overflow-safe). Used as the matrix scale for relative tolerances.
+    def _frobenius(self) -> float:
+        return math.hypot(*(x for row in self.matrix for x in row))
+
+    # Relative singularity tolerance for an n x n matrix: n * eps * ||A||_F  (cf. numpy.linalg.matrix_rank).
+    def _singular_tol(self) -> float:
+        return self.shape[0] * sys.float_info.epsilon * self._frobenius()
+
     # Structural checks
     # Checks whether the matrix is invertible. A matrix is invertible iff det(A) ≠ 0.    
     def is_invertible(self) -> bool:
@@ -312,7 +337,21 @@ class LinearTransformation:
             self._check_square()
         except ValueError:
             return False
-        return abs(self.determinant()) > 1e-9
+        # Forward elimination with partial pivoting; singular if any pivot is below the
+        # relative tolerance. (|det| > 1e-9 is scale dependent and just rounding noise otherwise.)
+        n = self.shape[0]
+        tol = self._singular_tol()
+        mat = [row[:] for row in self.matrix]
+        for col in range(n):
+            p = max(range(col, n), key=lambda r: abs(mat[r][col]))
+            if abs(mat[p][col]) <= tol:
+                return False
+            mat[col], mat[p] = mat[p], mat[col]
+            for r in range(col + 1, n):
+                factor = mat[r][col] / mat[col][col]
+                for k in range(col, n):
+                    mat[r][k] -= factor * mat[col][k]
+        return True
  
     # Checks whether the matrix is symmetric. A = Aᵀ
     def is_symmetric(self) -> bool:
@@ -405,7 +444,3 @@ if __name__ == "__main__":
     cols = int(input("Enter columns for zero matrix: "))
     print("\nZero Matrix:")
     print(LinearTransformation.zeros(rows, cols))
-    
-
-
-    
