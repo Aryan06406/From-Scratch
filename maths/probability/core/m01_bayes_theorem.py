@@ -1,5 +1,10 @@
-from maths.probability.core.m00_probability_foundations import SampleSpace, Event, ProbabilityMeasure, ConditionalProbability
+from __future__ import annotations
+
+import math
+from numbers import Real
 from typing import Dict
+
+from maths.probability.core.m00_probability_foundations import SampleSpace, Event, ProbabilityMeasure, ConditionalProbability, PROBABILITY_TOLERANCE
 
 # Bayes' Theorem: P(H|E) = (P(E|H) * P(H)) / P(E)
 class BayesTheorem:
@@ -9,29 +14,55 @@ class BayesTheorem:
 
     # Computes P(H|E) using instantiated Event and ProbabilityMeasure objects
     def compute_from_events(self, hypothesis: Event, evidence: Event) -> float:
-        p_evidence = self.prob_measure.P(evidence)
-        if p_evidence == 0:
-            raise ValueError("P(Evidence is 0, posterior is undefined)")
-        p_hypothesis = self.prob_measure.P(hypothesis)    # Prior: P(H)
-        p_evidence_given_hypothesis = self.cond_prob.compute(evidence, hypothesis)    # Likelihood: P(E|H)
-        return (p_evidence_given_hypothesis * p_hypothesis) / p_evidence  # Bayes Formula: (P(E|H) * P(H)) / P(E)
+        """Return P(H|E) directly; a zero-prior H correctly has posterior zero."""
+        p_evidence = self.prob_measure(evidence)
+        if p_evidence == 0.0:
+            raise ValueError("P(Evidence) is 0; posterior is undefined.")
+        p_joint = self.prob_measure(hypothesis & evidence)
+        return p_joint / p_evidence      # Bayes Formula: (P(E|H) * P(H)) / P(E)
 
     # Computes P(H_k|E) using Law of Total Probability:
     # P(H_k|E) = (P(E|H_k) * P(H_k)) / Σ (P(E|H_i) * P(H_i))
     @staticmethod
     def compute_from_partition(priors: Dict[str, float], likelihoods: Dict[str, float], target_hypothesis: str) -> float:
-        if set(priors.keys()) != set(likelihoods.keys()):
+        if set(priors) != set(likelihoods):
             raise ValueError("Keys in priors and likelihoods must match exactly.")
-        if not abs(sum(priors.values()) - 1.0) < 1e-6:
-            raise ValueError("Prior probabilities must sum to 1.0.")
         if target_hypothesis not in priors:
             raise ValueError(f"Target hypothesis '{target_hypothesis}' not in priors.")
-        # Law of Total Probability: P(E) = Σ P(E|H_i) * P(H_i)
-        p_evidence = sum(likelihoods[h] * priors[h] for h in priors)
-        if p_evidence == 0:
+
+        clean_priors: dict[str, float] = {}
+        clean_likelihoods: dict[str, float] = {}
+        for key, raw in priors.items():
+            if not isinstance(raw, Real):
+                raise ValueError("Priors must be finite real numbers in [0, 1].")
+            value = float(raw)
+            if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                raise ValueError("Priors must be finite real numbers in [0, 1].")
+            clean_priors[key] = value
+
+        for key, raw in likelihoods.items():
+            if not isinstance(raw, Real):
+                raise ValueError("Likelihoods must be finite real numbers in [0, 1].")
+            value = float(raw)
+            if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                raise ValueError("Likelihoods must be finite real numbers in [0, 1].")
+            clean_likelihoods[key] = value
+
+        if abs(math.fsum(clean_priors.values()) - 1.0) > PROBABILITY_TOLERANCE:
+            raise ValueError("Prior probabilities must sum to 1.0.")
+
+        # Normalize likelihoods before multiplying by tiny priors. This also makes
+        # common likelihood rescaling numerically harmless while information remains
+        # representable in the input floats.
+        scale = max(clean_likelihoods.values(), default=0.0)
+        if scale == 0.0:
             raise ValueError("Total P(Evidence) is 0; posterior is undefined.")
-        # Posterior calculation
-        return (likelihoods[target_hypothesis] * priors[target_hypothesis]) / p_evidence
+        scaled_likelihoods = {key: value / scale for key, value in clean_likelihoods.items()}
+        terms = {key: clean_priors[key] * scaled_likelihoods[key] for key in clean_priors}
+        evidence_mass = math.fsum(terms.values())
+        if evidence_mass == 0.0:
+            raise ValueError("Total P(Evidence) is 0; posterior is undefined.")
+        return terms[target_hypothesis] / evidence_mass
 
 if __name__ == "__main__":
     print("Method 1: Event Driven Bayes (Urn Problem)")
