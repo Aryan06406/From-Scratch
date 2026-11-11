@@ -1,10 +1,10 @@
 """
-Numerical-precision / tolerance / reference-implementation / stress tests for maths.linear_algebra.
+Numerical precision / tolerance / reference implementation / stress tests for maths.linear_algebra.
 
 Reference oracles:  numpy.linalg (LAPACK), math.hypot / math.fsum, exact Fractions.
-Tolerances are derived from floating-point error theory (n*u*sum|a_i b_i|, cond(A)*eps),
-NOT from "whatever makes the test pass".
+Tolerances are derived from floating point error theory (n*u*sum|a_i b_i|, cond(A)*eps)
 """
+
 import math
 
 import numpy as np
@@ -26,20 +26,18 @@ def _reseed():
     global rng
     rng = np.random.default_rng(20261024)
 
-
-# ================================================================ Vector precision
+# Vector precision
 @pytest.mark.numeric
 class TestVectorPrecision:
     @given(st.lists(st.tuples(st.floats(-1e6, 1e6), st.floats(-1e6, 1e6)), min_size=1, max_size=50))
     def test_dot_product_meets_higham_forward_error_bound(self, pairs):
         a, b = Vector([p[0] for p in pairs]), Vector([p[1] for p in pairs])
-        exact = math.fsum(x * y for x, y in pairs)          # (x*y rounding only; error bound still holds up to 2u)
+        exact = math.fsum(x * y for x, y in pairs)          
         bound = (len(pairs) + 2) * U * math.fsum(abs(x * y) for x, y in pairs) * 1.0001
         assert abs(a.dot_product(b) - exact) <= bound
 
     @pytest.mark.parametrize("scale", [1e-200, 1e-160, 1e-100, 1.0, 1e100, 1e154, 1e160, 1e200])
     def test_magnitude_vs_hypot_across_exponent_range(self, scale):
-        """BUG: x**2 overflows >1e154 (OverflowError) and underflows <1e-162 (returns 0.0)."""
         xs = [3 * scale, 4 * scale, 12 * scale]
         assert Vector(xs).magnitude() == pytest.approx(math.hypot(*xs), rel=4 * EPS)
 
@@ -51,7 +49,6 @@ class TestVectorPrecision:
 
     @pytest.mark.parametrize("eps_angle", [1e-4, 1e-6, 1e-8, 1e-10])
     def test_small_angle_resolution(self, eps_angle):
-        """BUG: acos(dot/|a||b|) loses everything below ~1e-8 rad (cos rounds to 1.0)."""
         got = V(1, 0).angle_between_vectors(V(1, eps_angle))
         ref = math.degrees(math.atan2(eps_angle, 1.0))
         assert got == pytest.approx(ref, rel=1e-6)
@@ -66,11 +63,10 @@ class TestVectorPrecision:
     def test_angle_with_self_never_raises_and_is_tiny(self, xs):
         v = Vector(xs)
         assume(v.magnitude() > 1e-100)
-        assert abs(v.angle_between_vectors(v)) < 1e-5            # acos clamp must prevent domain errors
+        assert abs(v.angle_between_vectors(v)) < 1e-5            
 
     @pytest.mark.parametrize("scale", [1e-6, 1e-3, 1.0, 1e3, 1e6, 1e9])
     def test_is_orthogonal_decision_is_scale_invariant(self, scale):
-        """BUG: `abs(dot) < 1e-9` is absolute. Tiny vectors look orthogonal; huge ones never are."""
         Q, _ = np.linalg.qr(rng.standard_normal((4, 4)))
         a, b_orth = vec(scale * Q[:, 0]), vec(scale * Q[:, 1])           # orthogonal to ~1e-16 relative
         b_tilt = vec(scale * (np.cos(1.4) * Q[:, 0] + np.sin(1.4) * Q[:, 1]))   # 80 degrees from a
@@ -79,14 +75,12 @@ class TestVectorPrecision:
 
     @pytest.mark.parametrize("scale", [1.0, 1e3, 1e8])
     def test_is_parallel_tolerates_rounding(self, scale):
-        """BUG: exact float equality (`a*r1 != b*r0`) rejects mathematically parallel float vectors."""
         a = Vector([0.1 * scale, 0.2 * scale, 0.3 * scale])
         assert a.is_parallel(a * 3.0) and a.is_parallel(a * 0.7) and a.is_parallel(a / 3.0)
 
     @pytest.mark.parametrize("p", [3, 20, 100, 1000])
     @pytest.mark.parametrize("scale", [1.0, 1e10, 1e-10])
     def test_p_norm_is_overflow_safe(self, p, scale):
-        """BUG: |x|**p overflows (OverflowError) / underflows (0.0); needs max-scaling."""
         xs = [1.0 * scale, 2.0 * scale, 3.0 * scale]
         m = max(xs)
         ref = m * sum((x / m) ** p for x in xs) ** (1 / p)
@@ -103,12 +97,10 @@ class TestVectorPrecision:
         exact = float(Fraction(1e8) * Fraction(1.0 + 1e-8) - Fraction(1.0) * Fraction(1e8 + 1.0))
         assert abs(z - exact) <= 4 * U * (abs(a[0] * b[1]) + abs(a[1] * b[0]))
 
-
-# ================================================================ Matrix vs references
+# Matrix vs references
 def random_well_conditioned(n, seed):
     r = np.random.default_rng(seed)
     return r.standard_normal((n, n)) + n * np.eye(n) * 0.5
-
 
 @pytest.mark.reference
 class TestMatrixAgainstNumpy:
@@ -161,7 +153,6 @@ class TestMatrixAgainstNumpy:
 
     @pytest.mark.parametrize("scale", [1e-12, 1e-6, 1.0, 1e6, 1e12])
     def test_rank_decision_is_scale_invariant(self, scale):
-        """BUG: absolute 1e-9 pivot tolerance => rank(c*A) depends on c (0 for tiny c, full for huge c)."""
         A = scale * (rng.standard_normal((6, 3)) @ rng.standard_normal((3, 6)))
         assert FundamentalSubspaces(mat(A)).rank() == 3
 
@@ -177,19 +168,16 @@ class TestMatrixAgainstNumpy:
 
     @pytest.mark.parametrize("scale", [1e-4, 1e-3, 1e-2, 1.0, 1e3])
     def test_is_invertible_decision_is_scale_invariant(self, scale):
-        """BUG: `abs(det) > 1e-9` => 1e-4*I(3) (perfectly conditioned) is 'singular'."""
         assert (LinearTransformation.identity(3) * scale).is_invertible()
 
     @pytest.mark.parametrize("scale", [1e3, 1e6, 1e9])
     def test_is_invertible_rejects_float_singular_matrices_at_any_scale(self, scale):
-        """BUG: det of a float rank-1 matrix is rounding noise ~ scale^2*1e-16 which exceeds 1e-9."""
         u, v = rng.standard_normal(4), rng.standard_normal(4)
         A = scale * np.outer(u, v)
         assert not mat(A).is_invertible()
 
     @pytest.mark.parametrize("scale", [1e-100, 1e-20, 1e-13, 1e-8, 1e8, 1e20])
     def test_inverse_scaling_equivariance(self, scale):
-        """inv(cA) == inv(A)/c. BUG: inverse_optimised rejects cA as 'singular' when pivot < 1e-12."""
         A = M([[2.0, 1.0], [1.0, 3.0]])
         base = arr(A.inverse_optimised())
         assert np.allclose(arr((A * scale).inverse_optimised()) * scale, base, rtol=1e-10)
@@ -197,11 +185,10 @@ class TestMatrixAgainstNumpy:
     def test_orthogonality_check_tolerance_vs_matrix_size(self):
         Q, _ = np.linalg.qr(rng.standard_normal((40, 40)))
         assert mat(Q).is_orthogonal()
-        Q[0, 0] += 1e-6                                   # a genuinely perturbed 'orthogonal' matrix
+        Q[0, 0] += 1e-6                                   
         assert not mat(Q).is_orthogonal()
 
-
-# ================================================================ Stress / stability
+# Stress / stability
 @pytest.mark.stress
 class TestIllConditionedStress:
     @pytest.mark.parametrize("n", [2, 4, 6, 8])
@@ -215,19 +202,17 @@ class TestIllConditionedStress:
 
     @pytest.mark.parametrize("n", [2, 4, 6, 8, 10])
     def test_hilbert_rank_is_full(self, n):
-        """Numerically full rank per LAPACK for n<=10; pivots < 1e-9 get declared zero here."""
         assert np.linalg.matrix_rank(np.array(hilbert(n))) == n
         assert FundamentalSubspaces(M(hilbert(n))).rank() == n
 
     @pytest.mark.parametrize("n", [4, 6, 8, 10])
     def test_hilbert_columns_gram_schmidt_loses_orthogonality_silently(self, n):
-        """MGS loses orthogonality ~ eps*cond. A 'basis' is returned with no warning. Householder QR does not."""
         H = np.array(hilbert(n))
         Q = GramSchmidt.orthonormal_basis([vec(H[:, j]) for j in range(n)])
         Qn = np.array([varr(q) for q in Q])
         loss = np.linalg.norm(Qn @ Qn.T - np.eye(len(Q)))
         qr_loss = np.linalg.norm(np.linalg.qr(H)[0].T @ np.linalg.qr(H)[0] - np.eye(n))
-        assert qr_loss < 1e-14                              # the reference achieves machine precision
+        assert qr_loss < 1e-14                             
         assert loss < 1e-8, f"orthogonality loss {loss:.2e}"
 
     def test_nearly_dependent_vectors_not_silently_mis_orthogonalised(self):
@@ -248,7 +233,6 @@ class TestIllConditionedStress:
         assert np.linalg.norm(A @ inv - np.eye(3)) <= 100 * 3 * EPS * kappa
 
     def test_near_singular_but_valid_matrix_is_not_called_singular(self):
-        """cond ~ 4e14 is representable; LAPACK inverts it. `inverse_optimised` raises 'singular'."""
         A = [[1.0, 1.0], [1.0, 1.0 + 1e-13]]
         assert np.isfinite(np.linalg.cond(np.array(A))) and np.linalg.cond(np.array(A)) < 1e15
         inv = M(A).inverse_optimised()
@@ -263,7 +247,6 @@ class TestIllConditionedStress:
         assert inv[0][0] == pytest.approx(1 / big, rel=1e-12)
 
     def test_unit_roundoff_boundary_classification(self):
-        """Matrices at 1 +/- n*eps of orthogonality must be classified consistently."""
         c = M([[1.0, 0.0], [0.0, 1.0 + 4 * EPS]])
         assert c.is_orthogonal()                          # within any sane tolerance
         d = M([[1.0, 0.0], [0.0, 1.0 + 1e-6]])

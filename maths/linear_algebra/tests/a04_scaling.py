@@ -6,6 +6,7 @@ Exponents are fitted on log(time) vs log(n).
 Timings use warm up, batched execution and median measurements.
 Thresholds allow for machine dependent timing variation.
 """
+
 import numpy as np
 import pytest
 
@@ -13,14 +14,11 @@ from maths.linear_algebra.core import (FundamentalSubspaces, GramSchmidt, Linear
                                        Projection, Vector)
 from maths.test_helpers import (M, best_time, growth_exponent, mat, time_limit, vec)
 
-
 def rand_mat(n, m=None, seed=0):
     return mat(np.random.default_rng(seed).standard_normal((n, m or n)))
 
-
 def rand_vec(n, seed=0):
     return vec(np.random.default_rng(seed).standard_normal(n))
-
 
 def exponent(fn_of_n, sizes, repeat=9):
     times = []
@@ -37,7 +35,6 @@ def exponent(fn_of_n, sizes, repeat=9):
     print(f"Measured exponent: {result:.4f}")
 
     return result
-
 
 @pytest.mark.performance
 class TestPolynomialAlgorithms:
@@ -116,7 +113,7 @@ class TestFactorialPathsAreUsable:
 
     def test_cofactor_recursion_is_factorial_documented_characterisation(self):
         calls = {"n": 0}
-        orig = LinearTransformation._det          # the recursive worker (determinant() just delegates to it)
+        orig = LinearTransformation._det          
 
         def counting(matrix):
             calls["n"] += 1
@@ -135,14 +132,12 @@ class TestFactorialPathsAreUsable:
 
     @pytest.mark.parametrize("n", [9, 10, 12])
     def test_is_invertible_finishes_quickly(self, n):
-        """BUG: is_invertible() calls the O(n!) determinant(); 12x12 would take minutes."""
         A = LinearTransformation.identity(n) * 2.0
         with time_limit(3):
             assert A.is_invertible()
 
     @pytest.mark.parametrize("n", [8, 10, 11])
     def test_inverse_finishes_quickly(self, n):
-        """BUG: inverse() = n^2 cofactors x O(n!) determinants."""
         A = mat(np.random.default_rng(n).standard_normal((n, n)) + n * np.eye(n))
         with time_limit(3):
             A.inverse()
@@ -154,7 +149,6 @@ class TestFactorialPathsAreUsable:
             d = A.determinant_optimised()
             inv = A.inverse_optimised()
         assert np.isfinite(d) and np.allclose(np.array(inv.matrix) @ np.array(A.matrix), np.eye(n), atol=1e-8)
-
 
 def test_vector_operation_diagnostic():
     import timeit

@@ -44,7 +44,6 @@ class TestVectorBoundary:
     @pytest.mark.parametrize("bad", ["abc", [1, "a"], [None], [[1], [2]]],
                              ids=["string", "mixed-str", "None", "nested"])
     def test_constructor_rejects_non_numeric(self, bad):
-        """BUG-candidate: Vector('abc') silently becomes ['a','b','c']; errors surface much later."""
         with pytest.raises((TypeError, ValueError)):
             Vector(bad)
 
@@ -79,7 +78,6 @@ class TestVectorBoundary:
     @pytest.mark.parametrize("np_scalar", [np.float64(2.0), np.int64(2), np.float32(2.0)],
                              ids=["f64", "i64", "f32"])
     def test_numpy_scalar_on_left_returns_Vector(self, np_scalar):
-        """BUG-candidate: numpy scalars hijack `scalar * Vector` and return an ndarray."""
         assert isinstance(np_scalar * V(1, 2), Vector)
 
     def test_dimension_mismatch_everywhere(self):
@@ -104,7 +102,6 @@ class TestVectorBoundary:
 
     @pytest.mark.parametrize("bad", [NAN, INF], ids=["nan", "inf"])
     def test_angle_with_non_finite_input_is_not_silently_zero(self, bad):
-        """BUG-candidate: clamp max(-1,min(1,nan)) swallows NaN and returns 0 degrees."""
         try:
             r = V(bad, 1).angle_between_vectors(V(1, 1))
         except (ValueError, ArithmeticError):
@@ -112,7 +109,6 @@ class TestVectorBoundary:
         assert math.isnan(r), f"angle({bad}) silently returned {r}"
 
     def test_zero_vector_parallel_convention_is_consistent(self):
-        """BUG-candidate: zero||zero is True but zero||nonzero is False."""
         z = V(0, 0)
         assert z.is_parallel(V(1, 2)) == z.is_parallel(V(0, 0)) == V(1, 2).is_parallel(z)
 
@@ -142,12 +138,10 @@ class TestNormsBoundary:
 
     @pytest.mark.parametrize("p", [0, -1, -0.5, NAN], ids=["0", "-1", "-0.5", "nan"])
     def test_invalid_p_rejected(self, p):
-        """BUG-candidate: p=nan sails through the `p <= 0` guard and returns nan."""
         with pytest.raises(ValueError):
             Norms(V(1, 2)).p_norm(p)
 
     def test_p_infinity_matches_infinity_norm(self):
-        """BUG-candidate: p=inf returns 1.0 (x**inf then total**0)."""
         n = Norms(V(3, 4))
         try:
             r = n.p_norm(INF)
@@ -203,7 +197,6 @@ class TestMatrixConstruction:
 @pytest.mark.boundary
 class TestMatrixOperations:
     def test_wrong_operand_types_raise_TypeError(self):
-        """BUG-candidate: `A + 5` raises AttributeError ('int' has no .shape) instead of TypeError."""
         A = M([[1, 2], [3, 4]])
         for f in (lambda: A + 5, lambda: A - 5, lambda: A + [[1, 2], [3, 4]]):
             with pytest.raises(TypeError):
@@ -247,7 +240,6 @@ class TestMatrixOperations:
 class TestMatrixSquareEdgeCases:
     @pytest.mark.parametrize("a", [4, -4, 0.5, 1e-3])
     def test_1x1_inverse(self, a):
-        """BUG: adjugate path computes det([]) == 0 for the 0x0 minor, so inverse([[a]]) == [[0.0]]."""
         assert M([[a]]).inverse()[0][0] == pytest.approx(1 / a)
 
     @pytest.mark.parametrize("a", [4, -4, 0.5])
@@ -255,21 +247,18 @@ class TestMatrixSquareEdgeCases:
         assert M([[a]]).inverse_optimised()[0][0] == pytest.approx(1 / a)
 
     def test_determinant_of_empty_matrix_is_one(self):
-        """Root cause of the 1x1 bug: det of a 0x0 matrix must be 1 (empty product)."""
         assert M([[1]]).determinant([]) == 1
 
     def test_determinant_explicit_argument_validated(self):
-        """BUG-candidate: public `matrix=` argument is not validated (non-square silently 'works')."""
         with pytest.raises(ValueError):
             M([[1]]).determinant([[1, 2, 3], [4, 5, 6]])
 
     def test_determinant_optimised_ignores_matrix_argument(self):
-        """BUG: signature advertises `matrix` but the argument is silently ignored."""
         A = M([[1, 2], [3, 4]])
         try:
             r = A.determinant_optimised([[5]])
         except TypeError:
-            return                      # removing the dead parameter is also an acceptable fix
+            return                      
         assert r == pytest.approx(5)
 
     @pytest.mark.parametrize("rows", [[[0, 0], [0, 0]], [[1, 2], [2, 4]], [[1, 2], [1, 2]]],
@@ -323,7 +312,6 @@ class TestProjectionBoundary:
             Projection.vector_projection(V(1, 2), V(1, 2, 3))
 
     def test_projection_matrix_rejects_non_vector(self):
-        """BUG-candidate: AttributeError instead of TypeError (no isinstance check)."""
         with pytest.raises(TypeError):
             Projection.projection_matrix([1, 2])
 
@@ -337,13 +325,11 @@ class TestProjectionBoundary:
 
     @pytest.mark.parametrize("s", [1e-3, 1e-4, 1e-5, 1e-8])
     def test_small_but_nonzero_target_vector(self, s):
-        """BUG: zero test is `v·v < 1e-9` (absolute) so any ||v|| < 3.2e-5 is declared 'zero'."""
         r = Projection.vector_projection(V(1, 1), V(s, 0))
         assert r == V(1.0, 0.0) or (r[0] == pytest.approx(1.0) and r[1] == 0)
 
     @pytest.mark.parametrize("s", [1e154, 1e160, 1e200])
     def test_huge_target_vector_does_not_silently_return_zero(self, s):
-        """BUG: v·v overflows to inf, so the projection silently collapses to the zero vector."""
         r = Projection.vector_projection(V(1, 1), V(s, 0))
         assert r[0] == pytest.approx(1.0) and r[1] == 0
 
@@ -389,7 +375,6 @@ class TestGramSchmidtBoundary:
 
     @pytest.mark.parametrize("s", [1e-3, 1e-6, 1e-9])
     def test_small_scale_input_is_not_discarded(self, s):
-        """BUG: absolute 1e-9 thresholds treat small-but-independent vectors as 'dependent'/zero."""
         b = GramSchmidt.orthonormal_basis([V(s, 0), V(0, s)])
         assert len(b) == 2
 
@@ -428,13 +413,11 @@ class TestSubspacesBoundary:
         assert FundamentalSubspaces(A).column_space() == [V(0, 1), V(1, 0)]
 
     def test_constructor_rejects_plain_lists(self):
-        """BUG-candidate: AttributeError ('list' has no .shape) instead of a clean TypeError."""
         with pytest.raises(TypeError):
             FundamentalSubspaces([[1, 2], [3, 4]])
 
     @pytest.mark.parametrize("s", [1e-12, 1e-10, 1e-6])
     def test_rank_of_tiny_scaled_identity(self, s):
-        """BUG: absolute pivot tolerance 1e-9: rank(s*I) == 0 for small s."""
         assert FundamentalSubspaces(LinearTransformation.identity(3) * s).rank() == 3
 
     def test_index_helpers_bounds(self):

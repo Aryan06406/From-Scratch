@@ -23,7 +23,7 @@ def zero(n):
     return Vector([0] * n)
 
 
-# ============================================================ Vector algebra (exact)
+# Vector algebra (exact)
 @pytest.mark.property
 class TestVectorAlgebra:
     @given(vec_pairs())
@@ -108,7 +108,7 @@ class TestVectorAlgebra:
         assert a.is_orthogonal(b) == (a.dot_product(b) == 0)
 
 
-# ============================================================ Norm axioms
+# Norm axioms
 @pytest.mark.property
 class TestNormAxioms:
     @given(vec_pairs(), small_int)
@@ -151,7 +151,7 @@ class TestNormAxioms:
         assert Norms(a).p_norm(1) == Norms(a).l1_norm()
 
 
-# ============================================================ Invariance / symmetry
+# Invariance / symmetry
 @pytest.mark.invariance
 class TestVectorInvariance:
     @given(vec_pairs(), st.randoms(use_true_random=False))
@@ -211,7 +211,7 @@ class TestVectorInvariance:
             assert abs(c0 - c1) < 1e-12
 
 
-# ============================================================ Matrix algebra (exact)
+# Matrix algebra (exact)
 @pytest.mark.property
 class TestMatrixAlgebra:
     @given(st.integers(1, 4), st.integers(1, 4), st.integers(1, 4), st.data())
@@ -266,7 +266,7 @@ class TestMatrixAlgebra:
         assert M(S).determinant() == 0                              # duplicate row
         S = [r[:] for r in A.matrix]
         S[j] = [x + k * y for x, y in zip(S[j], S[i])]
-        assert M(S).determinant() == d                              # row-addition invariance
+        assert M(S).determinant() == d                              # row addition invariance
         assert M(S).determinant_optimised() == pytest.approx(d, abs=1e-9 * (1 + np.prod(np.linalg.norm(arr(A), axis=1))))
 
     @given(st.integers(1, 5), st.data())
@@ -299,7 +299,6 @@ class TestInverseProperties:
 
     @given(diag_dominant())
     def test_adjugate_inverse_is_correctly_rounded(self, A):
-        """int/int true-division is correctly rounded => entries must equal float(exact Fraction)."""
         exact = exact_inverse(A.matrix)
         got = A.inverse()
         for i in range(A.shape[0]):
@@ -316,7 +315,7 @@ class TestInverseProperties:
         assert A.inverse_optimised().determinant_optimised() * A.determinant_optimised() == pytest.approx(1, rel=1e-8)
 
 
-# ====================================================== Orthogonal-matrix invariance
+# Orthogonal matrix invariance
 def givens(n, i, j, th):
     G = np.eye(n)
     G[i, i] = G[j, j] = math.cos(th)
@@ -360,7 +359,7 @@ class TestOrthogonalMatrices:
         assert P.determinant_optimised() == pytest.approx(-1.0, abs=1e-9)
 
 
-# ============================================================ Projection
+# Projection
 @pytest.mark.property
 class TestProjectionProperties:
     @given(vec_pairs(), nonzero_int)
@@ -406,7 +405,7 @@ class TestProjectionProperties:
         assert np.linalg.matrix_rank(Pa) == 1
 
 
-# ============================================================ Gram-Schmidt
+# Gram-Schmidt
 @pytest.mark.property
 class TestGramSchmidtProperties:
     @given(vec_lists())
@@ -447,10 +446,8 @@ class TestGramSchmidtProperties:
         Q2 = GramSchmidt.orthonormal_basis(Q)
         assert len(Q) == len(Q2) and all(max(abs(x - y) for x, y in zip(a, b)) < 1e-9 for a, b in zip(Q, Q2))
 
-
-# ============================================================ Fundamental subspaces
+# Fundamental subspaces
 tiny_mats = st.tuples(st.integers(1, 5), st.integers(1, 5)).flatmap(lambda t: int_mats(t[0], t[1], st.integers(-3, 3)))
-
 
 @pytest.mark.property
 class TestSubspaceProperties:
