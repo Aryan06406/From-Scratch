@@ -4,7 +4,9 @@ from __future__ import annotations
 import contextlib
 import math
 import signal
-import time
+import threading
+import ctypes
+import timeit
 from fractions import Fraction
 
 import numpy as np
@@ -79,11 +81,7 @@ class TimedOut(AssertionError):
     pass
 
 @contextlib.contextmanager
-def time_limit(seconds: float):
-    """Abort a pure python computation that runs too long (POSIX only)."""
-    if not hasattr(signal, "setitimer"):
-        pytest.skip("needs POSIX signals")
-
+def _signal_limit(seconds: float):
     def _handler(signum, frame):
         raise TimedOut(f"did not finish within {seconds}s")
 
@@ -95,13 +93,47 @@ def time_limit(seconds: float):
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, old)
 
-def best_time(fn, repeat: int = 3) -> float:
-    best = math.inf
-    for _ in range(repeat):
-        t0 = time.perf_counter()
-        fn()
-        best = min(best, time.perf_counter() - t0)
-    return best
+@contextlib.contextmanager
+def _watchdog_limit(seconds: float):
+    """Windows fallback: a watchdog thread injects TimedOut into the test thread."""
+    main_id = threading.get_ident()
+    done = threading.Event()
+
+    def watch():
+        if not done.wait(seconds):
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(
+                ctypes.c_ulong(main_id), ctypes.py_object(TimedOut))
+
+    t = threading.Thread(target=watch, daemon=True)
+    t.start()
+    try:
+        yield
+    finally:
+        done.set()
+        t.join()
+
+def time_limit(seconds: float):
+    """Abort a pure python computation that runs too long (POSIX and Windows)."""
+    if hasattr(signal, "setitimer"):
+        return _signal_limit(seconds)
+    return _watchdog_limit(seconds)
+
+def best_time(fn, repeat: int = 7) -> float:
+    """
+    Benchmark using batches of calls.
+    Returns minimum execution time per call.
+    """
+
+    fn()  # warm up
+    timer = timeit.Timer(fn)
+
+    # Estimate how many calls are needed for approximately
+    # 0.1 seconds of measurement per sample.
+    estimate = timer.timeit(number=1)
+    number = max(1, min(10000, int(0.1 / max(estimate, 1e-9))))
+    samples = [timer.timeit(number=number) / number for _ in range(repeat)]
+
+    return min(samples)
 
 def growth_exponent(sizes, times) -> float:
     """Least squares slope of log(time) vs log(size): ~1 linear, ~2 quadratic, ~3 cubic."""

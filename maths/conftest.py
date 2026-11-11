@@ -17,7 +17,7 @@ settings.register_profile(
 settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "adv"))
 
 def pytest_configure(config):
-    for name, desc in {
+    markers = {
         "unit": "plain example based unit tests",
         "boundary": "boundary value / edge case tests",
         "property": "Hypothesis property based tests",
@@ -26,5 +26,10 @@ def pytest_configure(config):
         "reference": "differential tests against numpy / scipy / exact Fractions",
         "scaling": "asymptotic complexity / convergence order tests",
         "stress": "ill conditioned / extreme magnitude / large size tests",
-    }.items():
-        config.addinivalue_line("markers", f"{name}: {desc}")
+        "performance": "performance and algorithmic scaling tests",
+    }
+    for name, desc in markers.items():
+        config.addinivalue_line(
+            "markers",
+            f"{name}: {desc}"
+        )
