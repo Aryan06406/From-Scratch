@@ -50,10 +50,17 @@ class Norms:
             raise ValueError("p must be a positive number.")
         if p == math.inf:
             return self.infinity_norm()
-        total = 0
-        for x in self.vector:
-            total += abs(x) ** p
-        return total ** (1 / p)
+        if p == 1:
+            return self.l1_norm()      # exact, no scaling round-off
+        if p == 2:
+            return self.l2_norm()      # hypot
+        # Scale by the largest entry so |x/m|**p <= 1 (no overflow; harmless underflow).
+        m = max((abs(x) for x in self.vector), default=0)
+        if m == 0:
+            return 0.0
+        if math.isinf(m):
+            return math.inf
+        return m * sum((abs(x) / m) ** p for x in self.vector) ** (1 / p)
     
 if __name__ == "__main__":
     n = int(input("Enter the dimension of vector: "))
