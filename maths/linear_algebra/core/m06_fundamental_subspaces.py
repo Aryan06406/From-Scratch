@@ -16,6 +16,7 @@ Topics covered
 """
 
 from __future__ import annotations
+import math
 import sys
 from maths.linear_algebra.core.m01_vector_ops import Vector
 from maths.linear_algebra.core.m03_linear_transformation import LinearTransformation
@@ -42,20 +43,17 @@ class FundamentalSubspaces:
         # Current row where the next pivot will be placed.
 
         # Matrix relative tolerance.
-        scale = max((abs(x) for row in mat for x in row), default=0.0)
+        scale = math.hypot(*(x for row in mat for x in row))     # Frobenius norm >= sigma_max
         tol = max(m, n) * sys.float_info.epsilon * scale
 
         pivot_row = 0       
         pivot_cols = []
         for col in range(n):
             # Search for a non zero pivot in the current column.
-            found = None
-            for row in range(pivot_row, m):
-                if abs(mat[row][col]) > tol:
-                    found = row
-                    break
+            # Partial pivoting: take the LARGEST entry in the column (numerically stable).
+            found = max(range(pivot_row, m), key=lambda r: abs(mat[r][col]))
             # This column contains no pivot. Move to the next column.    
-            if found is None:
+            if abs(mat[found][col]) <= tol:
                 continue      
 
             # Move the pivot row into position.
@@ -76,6 +74,9 @@ class FundamentalSubspaces:
             # Every row already has a pivot.
             if pivot_row == m:
                 break          
+        # Rows below the last pivot only hold rounding noise (everything there is <= tol): zero them.
+        for r in range(pivot_row, m):
+            mat[r] = [0.0] * n
         return mat, pivot_cols
 
     # Returns the rank of the matrix.
@@ -116,8 +117,7 @@ class FundamentalSubspaces:
     # Computes a basis for the Row Space. 
     # The basis consists of the non-zero rows of the Reduced Row Echelon Form.
     def row_space(self) -> list[Vector]:
-        return [Vector(row) for row in self._rref              
-                if not FundamentalSubspaces._is_zero_row(row)]
+        return [Vector(row) for row in self._rref[:self.rank()]]
     
     # Computes a basis for the Null Space. 
     # The Null Space consists of all solutions to the homogeneous system, Ax = 0
@@ -220,16 +220,3 @@ if __name__ == "__main__":
         result = At.apply_transformation(v)
         is_zero = all(abs(x) < 1e-9 for x in result)
         print(f"  A^T @ l{i+1} = {result} → {'✓' if is_zero else '✗'}")
-
-
-        
-
-
-
-
-
-
-
-
-        
-
