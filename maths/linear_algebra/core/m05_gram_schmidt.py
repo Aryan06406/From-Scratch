@@ -31,9 +31,12 @@ class GramSchmidt:
             raise TypeError("v must be a vector.")
         # Make a copy so the original vector remains unchanged.
         x = Vector(list(v))
-        # Remove the projection onto each existing basis vector.
-        for b in basis:
-            x = x - Projection.vector_projection(x, b)
+        # Remove the projection onto each existing basis vector (modified Gram-Schmidt).
+        # Done TWICE ("twice is enough", Kahan/Parlett): a single pass loses orthogonality
+        # ~ eps * cond(A); the second pass removes the rounding residue and restores ~eps.
+        for _ in range(2):
+            for b in basis:
+                x = x - Projection.vector_projection(x, b)
         return x
 
     # Applies the Gram Schmidt process to construct 
@@ -161,4 +164,3 @@ if __name__ == "__main__":
 
     print("\nIs orthogonal basis:", GramSchmidt.is_orthogonal_basis(ortho))
     print("Is orthonormal basis:", GramSchmidt.is_orthonormal_basis(orthonormal))
-
