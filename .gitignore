@@ -17,3 +17,5 @@ __pycache__/
 # Ignore other files
 figures/
 *.egg-info/
+test_results/
+.hypothesis/
