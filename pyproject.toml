@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "from-scratch-maths"
 version = "0.1.0"
 description = "Mathematics and machine learning algorithms implemented from scratch"
-requires-python = ">=3.10"
+requires-python = ">=3.11,<3.13"
 dependencies = [
     "numpy==1.26.4",
     "matplotlib==3.9.2"
@@ -15,7 +15,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
-    "hypothesis==6.185.5"
+    "hypothesis==6.170.15"
 ]
 
 [tool.setuptools.packages.find]
